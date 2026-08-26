@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null && request.auth.token.email != null; }
-    function isPrimaryAdmin() { return signedIn() && request.auth.token.email.lower() == 'khaitri15@gmail.com'; }
+    function isPrimaryAdmin() { return signedIn() && request.auth.token.email.lower() == 'henrynguyenfw@gmail.com'; }
     function hasAccessDocument() {
       return signedIn()
         && exists(/databases/$(database)/documents/access/$(request.auth.token.email.lower()))

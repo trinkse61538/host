@@ -8,6 +8,6 @@ export const runtimeConfig = {
     authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || 'host-a-8d0ca.firebaseapp.com',
     messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || '945997311371',
   },
-  primaryAdminEmail: (env.VITE_PRIMARY_ADMIN_EMAIL || 'khaitri15@gmail.com').toLowerCase(),
+  primaryAdminEmail: (env.VITE_PRIMARY_ADMIN_EMAIL || 'henrynguyenfw@gmail.com').toLowerCase(),
   defaultSpreadsheetId: env.VITE_DEFAULT_SPREADSHEET_ID || '1trCnssQ907GIDO1slhaW0RGcJaSWKXSCkScZP31r5SE',
 };
