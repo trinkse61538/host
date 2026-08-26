@@ -5,5 +5,4 @@ import { runtimeConfig } from '../../config/runtime';
 
 export const firebaseApp = initializeApp(runtimeConfig.firebase);
 export const auth = getAuth(firebaseApp);
-export const defaultDb = getFirestore(firebaseApp);
-export const db = getFirestore(firebaseApp, runtimeConfig.firestoreDatabaseId);
+export const db = getFirestore(firebaseApp);

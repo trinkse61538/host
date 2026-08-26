@@ -8,7 +8,7 @@ import {
   setDoc,
   type Unsubscribe,
 } from 'firebase/firestore';
-import { db, defaultDb } from './client';
+import { db } from './client';
 import type { AccessAccount, AccessRole, ManagedApartment } from '../../domain/models';
 import { runtimeConfig } from '../../config/runtime';
 import { makeSlug, normalizeEmail } from '../../shared/lib/text';
@@ -101,17 +101,6 @@ export function subscribeAccessAccounts(onValue: (accounts: AccessAccount[]) => 
     }).sort((a, b) => a.email.localeCompare(b.email));
 
     onValue(accounts);
-
-    void Promise.all(accounts.map(account => setDoc(
-      doc(defaultDb, 'access', account.email),
-      {
-        email: account.email,
-        role: account.role,
-        active: account.active,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true },
-    ))).catch(() => undefined);
   });
 }
 
@@ -174,10 +163,7 @@ export async function saveAccessAccount(email: string, role: AccessRole): Promis
   const enforcedRole = normalized === runtimeConfig.primaryAdminEmail ? 'admin' : role;
   const payload = { email: normalized, role: enforcedRole, active: true, updatedAt: serverTimestamp() };
 
-  await Promise.all([
-    setDoc(doc(db, 'access', normalized), payload, { merge: true }),
-    setDoc(doc(defaultDb, 'access', normalized), payload, { merge: true }),
-  ]);
+  await setDoc(doc(db, 'access', normalized), payload, { merge: true });
 }
 
 export async function removeAccessAccount(email: string): Promise<void> {
@@ -185,8 +171,5 @@ export async function removeAccessAccount(email: string): Promise<void> {
   if (normalized === runtimeConfig.primaryAdminEmail) {
     throw new Error('Primary admin cannot be removed.');
   }
-  await Promise.all([
-    deleteDoc(doc(db, 'access', normalized)),
-    deleteDoc(doc(defaultDb, 'access', normalized)),
-  ]);
+  await deleteDoc(doc(db, 'access', normalized));
 }

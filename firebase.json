@@ -1,6 +1,6 @@
 {
-  "firestore": [
-    {"database": "airbnb", "rules": "firestore.rules"},
-    {"database": "(default)", "rules": "firestore.default.rules"}
-  ]
+  "firestore": {
+    "database": "(default)",
+    "rules": "firestore.rules"
+  }
 }

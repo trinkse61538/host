@@ -72,14 +72,14 @@ Wait for DNS propagation, then enable **Enforce HTTPS** in GitHub Pages.
 
 ## 6. Firebase authorization
 
-The V3 app uses the same Firebase project and named Firestore database `airbnb` by default.
+V3 now uses the dedicated Firebase project `host-a-8d0ca` and its default Firestore database. It no longer reads or writes the legacy Airbnb Firebase project.
 
 If Firebase CLI is already installed:
 
 ```bash
 firebase login
-firebase use gen-lang-client-0674849112
+firebase use host-a-8d0ca
 firebase deploy --only firestore
 ```
 
-Existing apartment documents remain compatible. Legacy photo metadata is mapped to Git-managed static paths without Firebase Storage. Before final deployment, run `npm run import:old-media` and follow `MIGRATE-MEDIA.md` for check-in images that existed only in Storage.
+Enable Google Authentication and authorize `host.khaitringuyen.com` and `trinkse61538.github.io` in Firebase Authentication settings. GitHub remains the image host; Firebase Storage is not used at runtime.

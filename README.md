@@ -72,15 +72,14 @@ This imports Git-tracked parking images and the old logo. Check-in images that o
 
 ## Firebase
 
-Only Auth and Firestore are used at runtime. Deploy Firestore rules with:
+Only Auth and the **default Firestore database** in Firebase project `host-a-8d0ca` are used at runtime. Deploy Firestore rules with:
 
 ```bash
+firebase use host-a-8d0ca
 firebase deploy --only firestore
 ```
 
-There is intentionally no `storage.rules` in V3 and no Storage section in `firebase.json`.
-
-Existing Firestore documents remain readable. Legacy photo metadata containing `storagePath` is mapped to the expected static GitHub path without contacting Firebase Storage.
+There is intentionally no Firebase Storage runtime dependency. This Firebase project is independent from the legacy Airbnb Firebase project.
 
 ## GitHub Pages
 

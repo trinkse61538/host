@@ -50,7 +50,7 @@ host.khaitringuyen.com
 trinkse61538.github.io
 ```
 
-The app continues using the existing Firebase project and the named Firestore database `airbnb`.
+The app uses the dedicated Firebase project `host-a-8d0ca` and its default Firestore database. It is independent from the legacy Airbnb Firebase project.
 
 ## Validate before first push
 
