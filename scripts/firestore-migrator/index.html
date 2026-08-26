@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Host Firestore Migration</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <div>
+          <p class="eyebrow">ONE-TIME LOCAL TOOL</p>
+          <h1>Host data migration</h1>
+          <p class="muted">Copy Firestore data from the old Airbnb project into the new Host project, then export legacy check-in media for GitHub.</p>
+        </div>
+        <span class="badge">localhost only</span>
+      </header>
+
+      <section class="grid">
+        <article class="card">
+          <p class="eyebrow">SOURCE</p>
+          <h2>Old Airbnb Firebase</h2>
+          <dl>
+            <div><dt>Project</dt><dd>gen-lang-client-0674849112</dd></div>
+            <div><dt>Database</dt><dd>airbnb</dd></div>
+            <div><dt>Expected admin</dt><dd>khaitri15@gmail.com</dd></div>
+          </dl>
+          <button id="login-old">Sign in to OLD Firebase</button>
+          <p id="old-user" class="status">Not signed in</p>
+        </article>
+
+        <article class="card">
+          <p class="eyebrow">DESTINATION</p>
+          <h2>New Host Firebase</h2>
+          <dl>
+            <div><dt>Project</dt><dd>host-a-8d0ca</dd></div>
+            <div><dt>Database</dt><dd>(default)</dd></div>
+            <div><dt>Primary admin</dt><dd>henrynguyenfw@gmail.com</dd></div>
+          </dl>
+          <button id="login-new">Sign in to NEW Firebase</button>
+          <p id="new-user" class="status">Not signed in</p>
+        </article>
+      </section>
+
+      <section class="card actions">
+        <div>
+          <p class="eyebrow">MIGRATION</p>
+          <h2>Preview → Backup → Copy</h2>
+          <p class="muted">The copier uses merge writes and never deletes destination documents.</p>
+        </div>
+        <div class="button-row">
+          <button id="preview" class="secondary">1. Preview old data</button>
+          <button id="backup" class="secondary" disabled>2. Download JSON backup</button>
+          <button id="migrate" disabled>3. Migrate Firestore</button>
+          <button id="media" class="secondary" disabled>4. Download check-in media ZIP</button>
+        </div>
+        <div id="summary" class="summary"></div>
+      </section>
+
+      <section class="card">
+        <div class="log-head">
+          <div>
+            <p class="eyebrow">LOG</p>
+            <h2>Migration activity</h2>
+          </div>
+          <button id="clear-log" class="ghost">Clear</button>
+        </div>
+        <pre id="log">Ready.</pre>
+      </section>
+
+      <section class="card warning">
+        <h2>Before you start</h2>
+        <ol>
+          <li>Both Firebase projects must allow <code>localhost</code> in Authentication → Settings → Authorized domains.</li>
+          <li>Sign in to OLD Firebase with an account that can read the old <code>airbnb</code> database.</li>
+          <li>Sign in to NEW Firebase with <code>henrynguyenfw@gmail.com</code>.</li>
+          <li>Download the JSON backup before clicking migrate.</li>
+          <li>After downloading the media ZIP, extract its <code>media/checkin</code> folder into this repo's <code>public/</code> folder and commit it to GitHub.</li>
+        </ol>
+      </section>
+    </main>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

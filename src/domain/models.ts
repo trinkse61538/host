@@ -17,6 +17,37 @@ export interface ApartmentPhoto {
   caption: string;
 }
 
+export interface ParkingPhoto {
+  /** Repository-managed path relative to public/, normally media/parking/... */
+  path: string;
+  captionVi: string;
+  captionEn: string;
+}
+
+export interface ParkingGuide {
+  enabled: boolean;
+  statusVi: string;
+  statusEn: string;
+  locationVi: string;
+  locationEn: string;
+  accessVi: string;
+  accessEn: string;
+  spot: string;
+  mapUrl: string;
+  noteVi: string;
+  noteEn: string;
+  internalNoteVi: string;
+  internalNoteEn: string;
+  internalEmailTo: string;
+  internalEmailSubject: string;
+  internalEmailBody: string;
+  instructionsVi: string[];
+  instructionsEn: string[];
+  messageVi: string;
+  messageEn: string;
+  photos: ParkingPhoto[];
+}
+
 export interface ManagedApartment {
   id: string;
   apartment: string;
@@ -40,6 +71,8 @@ export interface ManagedApartment {
   airbnbAgentStatus: AirbnbPolicyStatus;
   airbnbStrataStatus: AirbnbPolicyStatus;
   airbnbPolicyNote: string;
+  cleanerUnitPrice: number;
+  parking: ParkingGuide;
 }
 
 export interface LowItem { name: string; value: string; }

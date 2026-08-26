@@ -8,15 +8,19 @@ import { AppShell, type AppTab } from './AppShell';
 import { InventoryPage } from '../features/inventory/InventoryPage';
 import { NotificationsPage } from '../features/notifications/NotificationsPage';
 import { CleanerPage } from '../features/cleaner/CleanerPage';
+import { InvoicePage } from '../features/invoice/InvoicePage';
 import { WifiPage } from '../features/wifi/WifiPage';
 import { CheckinPage } from '../features/checkin/CheckinPage';
+import { ParkingPage } from '../features/parking/ParkingPage';
 import { ManagementPage } from '../features/management/ManagementPage';
 
 function Page({ tab }: { tab: AppTab }) {
   if (tab === 'notifications') return <NotificationsPage />;
   if (tab === 'cleaner') return <CleanerPage />;
+  if (tab === 'invoice') return <InvoicePage />;
   if (tab === 'wifi') return <WifiPage />;
   if (tab === 'checkin') return <CheckinPage />;
+  if (tab === 'parking') return <ParkingPage />;
   if (tab === 'manage') return <ManagementPage />;
   return <InventoryPage />;
 }

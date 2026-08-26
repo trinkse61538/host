@@ -10,8 +10,28 @@ import {
   emptyApartment,
   saveApartment,
 } from '../../infrastructure/firebase/apartmentRepository';
+import { findAgentFallback, policyStatus, statusLabel } from '../checkin/agentPolicy';
+import { defaultCleanerPrice, formatAud } from '../invoice/pricing';
 import { ApartmentEditor } from './ApartmentEditor';
 import { AccessPanel } from './AccessPanel';
+import { CleanerPricingPanel } from './CleanerPricingPanel';
+
+function hydrateAgentFallback(apartment: ManagedApartment): ManagedApartment {
+  const fallback = findAgentFallback(apartment);
+  if (!fallback) return apartment;
+  return {
+    ...apartment,
+    propertyAddress: apartment.propertyAddress || fallback.address,
+    agency: apartment.agency || fallback.agency,
+    agentEmail: apartment.agentEmail || fallback.email,
+    agentPhone: apartment.agentPhone || fallback.phone,
+    companyPhone: apartment.companyPhone || fallback.companyPhone,
+    airbnbAgentStatus: apartment.airbnbAgentStatus === 'unknown' ? fallback.agentStatus : apartment.airbnbAgentStatus,
+    airbnbStrataStatus: apartment.airbnbStrataStatus === 'unknown' ? fallback.strataStatus : apartment.airbnbStrataStatus,
+    airbnbPolicyNote: apartment.airbnbPolicyNote || fallback.note || '',
+    cleanerUnitPrice: apartment.cleanerUnitPrice > 0 ? apartment.cleanerUnitPrice : defaultCleanerPrice(apartment),
+  };
+}
 
 export function ManagementPage() {
   const { apartments, accessAccounts, canEdit, isAdmin, role } = useApartments();
@@ -21,14 +41,14 @@ export function ManagementPage() {
   const [message, setMessage] = useState('');
 
   const visible = useMemo(
-    () => apartments.filter(item => item.apartment.toLowerCase().includes(query.toLowerCase())),
+    () => apartments.filter(item => `${item.apartment} ${item.propertyAddress}`.toLowerCase().includes(query.toLowerCase())),
     [apartments, query],
   );
 
   if (!canEdit) return <Card>This area requires Editor or Admin access.</Card>;
 
   const open = (apartment?: ManagedApartment) => {
-    setWorking(apartment ? structuredClone(apartment) : emptyApartment());
+    setWorking(apartment ? hydrateAgentFallback(structuredClone(apartment)) : emptyApartment());
     setMessage('');
   };
 
@@ -37,7 +57,7 @@ export function ManagementPage() {
     const id = working.id || createApartmentId(working.apartment, apartments.map(item => item.id));
     await saveApartment({ ...working, id }, user.email);
     setWorking(null);
-    setMessage('Apartment saved. Static media references were updated; image files remain Git-managed.');
+    setMessage('Apartment saved. Agent policy, cleaner price and static media references were updated.');
   };
 
   const remove = async (apartment: ManagedApartment) => {
@@ -47,7 +67,7 @@ export function ManagementPage() {
 
   return (
     <div className="stack-lg">
-      <Card>
+      <Card className="feature-card feature-card--manage">
         <div className="toolbar">
           <div>
             <span className="eyebrow">Data management</span>
@@ -64,32 +84,38 @@ export function ManagementPage() {
             <Button onClick={() => open()}>Add apartment</Button>
           </div>
         </div>
-        {message && <div className="notice">{message}</div>}
+        {message && <div className="notice notice--good">{message}</div>}
       </Card>
 
       <div className="table-card">
         <table>
           <thead>
-            <tr><th>Apartment</th><th>Wi-Fi</th><th>Check-in</th><th>Agent policy</th><th>Photos</th><th /></tr>
+            <tr><th>Apartment</th><th>Wi-Fi</th><th>Check-in</th><th>Agent / Strata</th><th>Cleaner</th><th>Photos</th><th /></tr>
           </thead>
           <tbody>
-            {visible.map(apartment => (
-              <tr key={apartment.id}>
-                <td><strong>{apartment.apartment}</strong></td>
-                <td>{apartment.wifiName || '—'}</td>
-                <td>{apartment.lockboxCode || apartment.keyAddress || '—'}</td>
-                <td>{apartment.airbnbAgentStatus} / {apartment.airbnbStrataStatus}</td>
-                <td>{apartment.photos.length}</td>
-                <td className="actions">
-                  <Button variant="secondary" onClick={() => open(apartment)}>Edit</Button>
-                  <Button variant="danger" onClick={() => void remove(apartment)}>Delete</Button>
-                </td>
-              </tr>
-            ))}
+            {visible.map(apartment => {
+              const policy = policyStatus(apartment);
+              const cleanerPrice = apartment.cleanerUnitPrice > 0 ? apartment.cleanerUnitPrice : defaultCleanerPrice(apartment);
+              return (
+                <tr key={apartment.id}>
+                  <td><strong>{apartment.apartment}</strong></td>
+                  <td>{apartment.wifiName || '—'}</td>
+                  <td>{apartment.lockboxCode || apartment.keyAddress || '—'}</td>
+                  <td className={policy.blocked ? 'text-danger' : ''}>{statusLabel(policy.agent)} / {statusLabel(policy.strata)}</td>
+                  <td>{cleanerPrice > 0 ? formatAud(cleanerPrice) : '—'}</td>
+                  <td>{apartment.photos.length}</td>
+                  <td className="actions">
+                    <Button variant="secondary" onClick={() => open(apartment)}>Edit</Button>
+                    <Button variant="danger" onClick={() => void remove(apartment)}>Delete</Button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
+      {user?.email && <CleanerPricingPanel apartments={apartments} actorEmail={user.email} />}
       {isAdmin && <AccessPanel accounts={accessAccounts} />}
 
       {working && (

@@ -24,7 +24,7 @@ export function NotificationsPage() {
 
   return <div className="split-layout">
     <div className="stack-lg">
-      <Card><div className="card-heading"><div><span className="eyebrow">Shortage alerts</span><h2>Select apartments</h2></div><span>{selected.length}/{alerts.length}</span></div>
+      <Card className="feature-card"><div className="card-heading"><div><span className="eyebrow">Shortage alerts</span><h2>Select apartments</h2></div><div className="selection-actions"><span>{selected.length}/{alerts.length}</span><Button variant="secondary" onClick={() => setSelected(alerts.map(report => report.sheetName))} disabled={!alerts.length}>Select all</Button><Button variant="ghost" onClick={() => setSelected([])} disabled={!selected.length}>Deselect all</Button></div></div>
         <div className="selection-list">{alerts.map(report => <label key={report.sheetName} className="selection-row"><input type="checkbox" checked={selected.includes(report.sheetName)} onChange={() => setSelected(current => current.includes(report.sheetName) ? current.filter(name => name !== report.sheetName) : [...current, report.sheetName])} /><span><strong>{report.sheetName}</strong><small>{report.lowItems.map(item => item.name).join(', ')}</small></span></label>)}</div>
       </Card>
       <Card><h3>Delivery channels</h3><div className="form-grid">

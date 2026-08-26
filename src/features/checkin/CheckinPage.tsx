@@ -12,7 +12,7 @@ import { findAgentFallback, policyStatus, statusLabel } from './agentPolicy';
 
 export function CheckinPage() {
   const { apartments } = useApartments();
-  const { locale } = useLocale();
+  const { locale, text } = useLocale();
   const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState('');
 
@@ -29,33 +29,37 @@ export function CheckinPage() {
     );
   }, [query, records]);
 
-  const active = visible.find(record => record.id === activeId) || visible[0];
-  if (!active) return <Card>No check-in records available.</Card>;
-
-  const steps = locale === 'vi' ? active.instructionsVi : active.instructionsEn;
-  const fullGuide = steps.length
-    ? steps.map((step, index) => `${locale === 'vi' ? 'BƯỚC' : 'STEP'} ${index + 1}\n${step}`).join('\n\n')
-    : active.instructions;
+  const active = activeId ? records.find(record => record.id === activeId) || null : null;
+  const steps = active ? (locale === 'vi' ? active.instructionsVi : active.instructionsEn) : [];
+  const fullGuide = active
+    ? (steps.length
+      ? steps.map((step, index) => `${locale === 'vi' ? 'BƯỚC' : 'STEP'} ${index + 1}\n${step}`).join('\n\n')
+      : active.instructions)
+    : '';
 
   return (
     <div className="checkin-layout">
-      <Card className="checkin-sidebar">
+      <Card className="checkin-sidebar feature-card feature-card--checkin">
         <div className="stack">
           <span className="eyebrow">Guest access</span>
-          <h2>Check-in guides</h2>
+          <h2>{text('Hướng dẫn check-in', 'Check-in guides')}</h2>
           <input
             className="input"
             value={query}
             onChange={event => setQuery(event.target.value)}
-            placeholder="Find an apartment"
+            placeholder={text('Tìm căn hộ', 'Find an apartment')}
           />
+          <select className="input" value={activeId} onChange={event => setActiveId(event.target.value)}>
+            <option value="">{text('— Chọn căn hộ —', '— Select an apartment —')}</option>
+            {visible.map(record => <option key={record.id} value={record.id}>{record.apartment}</option>)}
+          </select>
         </div>
 
         <div className="sidebar-list">
           {visible.map(record => (
             <button
               key={record.id}
-              className={`sidebar-item ${active.id === record.id ? 'sidebar-item--active' : ''}`}
+              className={`sidebar-item ${activeId === record.id ? 'sidebar-item--active' : ''}`}
               onClick={() => setActiveId(record.id)}
             >
               <span>
@@ -68,12 +72,20 @@ export function CheckinPage() {
         </div>
       </Card>
 
-      <div className="stack-lg">
-        <ActiveGuideCard apartment={active} fullGuide={fullGuide} />
-        <AgentCard apartment={active} />
-        <PhotoWalkthrough apartment={active} />
-        <StepGuide apartment={active} steps={steps} />
-      </div>
+      {!active ? (
+        <Card className="empty-state empty-state--checkin">
+          <div className="empty-state__icon">K</div>
+          <h2>{text('Chọn một căn hộ để xem check-in', 'Select an apartment to view check-in')}</h2>
+          <p>{text('Không có căn nào được mở mặc định. Hãy tìm kiếm hoặc chọn căn hộ ở cột bên trái.', 'No apartment opens by default. Search or select one from the left panel.')}</p>
+        </Card>
+      ) : (
+        <div className="stack-lg">
+          <ActiveGuideCard apartment={active} fullGuide={fullGuide} />
+          <AgentCard apartment={active} />
+          <PhotoWalkthrough apartment={active} />
+          <StepGuide apartment={active} steps={steps} />
+        </div>
+      )}
     </div>
   );
 }
@@ -92,7 +104,7 @@ function hasCheckinContent(apartment: ManagedApartment): boolean {
 
 function ActiveGuideCard({ apartment, fullGuide }: { apartment: ManagedApartment; fullGuide: string }) {
   return (
-    <Card>
+    <Card className="feature-card feature-card--checkin">
       <div className="card-heading">
         <div>
           <span className="eyebrow">Active guide</span>
@@ -191,11 +203,27 @@ function policyTone(status: ManagedApartment['airbnbAgentStatus']): 'danger' | '
 }
 
 function PhotoWalkthrough({ apartment }: { apartment: ManagedApartment }) {
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [copyError, setCopyError] = useState('');
   if (apartment.photos.length === 0) return null;
+
+  const copyImage = async (src: string, index: number) => {
+    try {
+      await copyImageAsPng(src);
+      setCopyError('');
+      setCopiedIndex(index);
+      window.setTimeout(() => setCopiedIndex(current => current === index ? null : current), 1800);
+    } catch (error) {
+      setCopiedIndex(null);
+      setCopyError(error instanceof Error ? error.message : 'Unable to copy image.');
+    }
+  };
 
   return (
     <Card>
       <span className="eyebrow">Visual walkthrough</span>
+      {copiedIndex !== null && <div className="notice notice--good">✓ Image copied to clipboard.</div>}
+      {copyError && <div className="notice notice--danger">{copyError}</div>}
       <div className="photo-grid">
         {apartment.photos.map((photo, index) => {
           const src = photoAssetUrl(photo.path);
@@ -204,13 +232,8 @@ function PhotoWalkthrough({ apartment }: { apartment: ManagedApartment }) {
               <img src={src} alt={photo.caption} />
               <figcaption>{photo.caption}</figcaption>
               {src && (
-                <Button
-                  variant="secondary"
-                  onClick={() => void copyImageAsPng(src).catch(error => {
-                    alert(error instanceof Error ? error.message : 'Unable to copy image.');
-                  })}
-                >
-                  Copy image
+                <Button variant="secondary" onClick={() => void copyImage(src, index)}>
+                  {copiedIndex === index ? 'Copied ✓' : 'Copy image'}
                 </Button>
               )}
             </figure>

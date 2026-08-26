@@ -9,10 +9,43 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from './client';
-import type { AccessAccount, AccessRole, ManagedApartment } from '../../domain/models';
+import type {
+  AccessAccount,
+  AccessRole,
+  ManagedApartment,
+  ParkingGuide,
+  ParkingPhoto,
+} from '../../domain/models';
 import { runtimeConfig } from '../../config/runtime';
 import { makeSlug, normalizeEmail } from '../../shared/lib/text';
 import { normalizePhotoPath, normalizeStoredPhoto } from '../staticMedia/photoAssets';
+import { parkingAssetPath } from '../staticMedia/parkingAssets';
+
+export function emptyParkingGuide(): ParkingGuide {
+  return {
+    enabled: false,
+    statusVi: '',
+    statusEn: '',
+    locationVi: '',
+    locationEn: '',
+    accessVi: '',
+    accessEn: '',
+    spot: '',
+    mapUrl: '',
+    noteVi: '',
+    noteEn: '',
+    internalNoteVi: '',
+    internalNoteEn: '',
+    internalEmailTo: '',
+    internalEmailSubject: '',
+    internalEmailBody: '',
+    instructionsVi: [],
+    instructionsEn: [],
+    messageVi: '',
+    messageEn: '',
+    photos: [],
+  };
+}
 
 export function emptyApartment(id = ''): ManagedApartment {
   return {
@@ -38,6 +71,62 @@ export function emptyApartment(id = ''): ManagedApartment {
     airbnbAgentStatus: 'unknown',
     airbnbStrataStatus: 'unknown',
     airbnbPolicyNote: '',
+    cleanerUnitPrice: 0,
+    parking: emptyParkingGuide(),
+  };
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+    : [];
+}
+
+function parkingPhotos(value: unknown): ParkingPhoto[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((photo): photo is Record<string, unknown> => Boolean(photo) && typeof photo === 'object')
+    .map(photo => {
+      const rawPath = stringValue(photo.path) || stringValue(photo.storagePath) || stringValue(photo.url);
+      return {
+        path: parkingAssetPath(rawPath),
+        captionVi: stringValue(photo.captionVi) || stringValue(photo.caption),
+        captionEn: stringValue(photo.captionEn) || stringValue(photo.caption),
+      };
+    })
+    .filter(photo => Boolean(photo.path));
+}
+
+function parseParking(value: unknown): ParkingGuide {
+  const base = emptyParkingGuide();
+  if (!value || typeof value !== 'object') return base;
+  const raw = value as Record<string, unknown>;
+  return {
+    enabled: raw.enabled === true,
+    statusVi: stringValue(raw.statusVi),
+    statusEn: stringValue(raw.statusEn),
+    locationVi: stringValue(raw.locationVi),
+    locationEn: stringValue(raw.locationEn),
+    accessVi: stringValue(raw.accessVi),
+    accessEn: stringValue(raw.accessEn),
+    spot: stringValue(raw.spot),
+    mapUrl: stringValue(raw.mapUrl),
+    noteVi: stringValue(raw.noteVi),
+    noteEn: stringValue(raw.noteEn),
+    internalNoteVi: stringValue(raw.internalNoteVi),
+    internalNoteEn: stringValue(raw.internalNoteEn),
+    internalEmailTo: stringValue(raw.internalEmailTo),
+    internalEmailSubject: stringValue(raw.internalEmailSubject),
+    internalEmailBody: stringValue(raw.internalEmailBody),
+    instructionsVi: stringArray(raw.instructionsVi),
+    instructionsEn: stringArray(raw.instructionsEn),
+    messageVi: stringValue(raw.messageVi),
+    messageEn: stringValue(raw.messageEn),
+    photos: parkingPhotos(raw.photos),
   };
 }
 
@@ -47,18 +136,18 @@ function fromDocument(id: string, value: Record<string, unknown>): ManagedApartm
     ...base,
     ...value,
     id,
-    instructionsVi: Array.isArray(value.instructionsVi)
-      ? value.instructionsVi.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
-      : [],
-    instructionsEn: Array.isArray(value.instructionsEn)
-      ? value.instructionsEn.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
-      : [],
+    instructionsVi: stringArray(value.instructionsVi),
+    instructionsEn: stringArray(value.instructionsEn),
     photos: Array.isArray(value.photos)
       ? value.photos
           .filter((photo): photo is Record<string, unknown> => Boolean(photo) && typeof photo === 'object')
           .map(photo => normalizeStoredPhoto(photo))
           .filter(photo => Boolean(photo.path))
       : [],
+    cleanerUnitPrice: typeof value.cleanerUnitPrice === 'number' && Number.isFinite(value.cleanerUnitPrice)
+      ? Math.max(0, value.cleanerUnitPrice)
+      : 0,
+    parking: parseParking(value.parking),
   } as ManagedApartment;
 }
 
@@ -112,6 +201,21 @@ export function createApartmentId(name: string, existingIds: string[]): string {
   return `${base}-${suffix}`;
 }
 
+function serializeParking(parking: ParkingGuide) {
+  return {
+    ...parking,
+    photos: parking.photos
+      .map(photo => ({
+        path: parkingAssetPath(photo.path),
+        captionVi: photo.captionVi.trim(),
+        captionEn: photo.captionEn.trim(),
+      }))
+      .filter(photo => Boolean(photo.path)),
+    instructionsVi: parking.instructionsVi.map(step => step.trim()).filter(Boolean),
+    instructionsEn: parking.instructionsEn.map(step => step.trim()).filter(Boolean),
+  };
+}
+
 export async function saveApartment(apartment: ManagedApartment, actorEmail: string): Promise<void> {
   if (!apartment.id) throw new Error('Apartment ID is required.');
   if (!apartment.apartment.trim()) throw new Error('Apartment name is required.');
@@ -145,6 +249,17 @@ export async function saveApartment(apartment: ManagedApartment, actorEmail: str
     airbnbAgentStatus: apartment.airbnbAgentStatus,
     airbnbStrataStatus: apartment.airbnbStrataStatus,
     airbnbPolicyNote: apartment.airbnbPolicyNote.trim(),
+    cleanerUnitPrice: Number.isFinite(apartment.cleanerUnitPrice) ? Math.max(0, apartment.cleanerUnitPrice) : 0,
+    parking: serializeParking(apartment.parking),
+    updatedAt: serverTimestamp(),
+    updatedBy: normalizeEmail(actorEmail),
+  }, { merge: true });
+}
+
+export async function saveCleanerUnitPrice(apartmentId: string, unitPrice: number, actorEmail: string): Promise<void> {
+  if (!Number.isFinite(unitPrice) || unitPrice < 0) throw new Error('Cleaner Unit Price must be 0 or greater.');
+  await setDoc(doc(db, 'apartments', apartmentId), {
+    cleanerUnitPrice: Math.round(unitPrice * 100) / 100,
     updatedAt: serverTimestamp(),
     updatedBy: normalizeEmail(actorEmail),
   }, { merge: true });

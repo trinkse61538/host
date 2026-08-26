@@ -39,6 +39,7 @@ export function ApartmentEditor({ apartment, onChange, onCancel, onSave }: Apart
               <Field label="Wi-Fi name" value={apartment.wifiName} onChange={value => update('wifiName', value)} />
               <Field label="Wi-Fi password" value={apartment.password} onChange={value => update('password', value)} />
               <Field label="Wi-Fi note" value={apartment.wifiNote} onChange={value => update('wifiNote', value)} />
+              <NumberField label="Cleaner Unit Price (AUD)" value={apartment.cleanerUnitPrice} onChange={value => update('cleanerUnitPrice', value)} />
             </div>
           </Card>
 
@@ -97,6 +98,15 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
     <label>
       <span>{label}</span>
       <input className="input" value={value} onChange={event => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
+  return (
+    <label>
+      <span>{label}</span>
+      <input className="input" type="number" min="0" step="0.01" value={value || ''} onChange={event => onChange(Number(event.target.value) || 0)} />
     </label>
   );
 }
