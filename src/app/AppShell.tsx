@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { PwaInstallButton } from './PwaInstallButton';
 import { useAuth } from './providers/AuthProvider';
 import { useTheme } from './providers/ThemeProvider';
@@ -38,17 +38,69 @@ export function AppShell({ render }: { render: (tab: AppTab) => ReactNode }) {
   const { theme, toggle } = useTheme();
   const { locale, setLocale } = useLocale();
   const { canEdit, role } = useApartments();
+  const navRef = useRef<HTMLElement | null>(null);
+  const [navEdges, setNavEdges] = useState({ left: false, right: false });
 
   const availableTabs = tabs.filter(item => item.id !== 'manage' || canEdit);
   const current = availableTabs.find(item => item.id === tab) || availableTabs[0];
   const userLabel = user?.displayName || user?.email || 'Host user';
   const avatar = useMemo(() => initials(userLabel), [userLabel]);
 
+  const updateNavEdges = useCallback(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const maxScroll = Math.max(0, nav.scrollWidth - nav.clientWidth);
+    setNavEdges({
+      left: nav.scrollLeft > 5,
+      right: nav.scrollLeft < maxScroll - 5,
+    });
+  }, []);
+
+  const scrollNav = (direction: -1 | 1) => {
+    const nav = navRef.current;
+    if (!nav) return;
+    nav.scrollBy({
+      left: direction * Math.max(150, nav.clientWidth * 0.58),
+      behavior: 'smooth',
+    });
+  };
+
+  const revealTab = (id: AppTab) => {
+    window.requestAnimationFrame(() => {
+      const nav = navRef.current;
+      const item = nav?.querySelector<HTMLElement>(`[data-tab-id="${id}"]`);
+      if (!nav || !item) return;
+
+      const target = item.offsetLeft - (nav.clientWidth - item.offsetWidth) / 2;
+      nav.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+    });
+  };
+
+  useEffect(() => {
+    updateNavEdges();
+    const nav = navRef.current;
+    if (!nav) return;
+
+    const onScroll = () => updateNavEdges();
+    const onResize = () => updateNavEdges();
+
+    nav.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+
+    const frame = window.requestAnimationFrame(updateNavEdges);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      nav.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [availableTabs.length, updateNavEdges]);
+
   const setActive = (next: AppTab) => {
     setTab(next);
     const url = new URL(location.href);
     url.searchParams.set('tab', next);
     history.replaceState({}, '', url);
+    revealTab(next);
   };
 
   return (
@@ -90,21 +142,51 @@ export function AppShell({ render }: { render: (tab: AppTab) => ReactNode }) {
       </header>
 
       <div className="workspace">
-        <aside className="nav-rail">
-          <div className="nav-rail__label">Workspace</div>
-          {availableTabs.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActive(item.id)}
-              data-tab-id={item.id}
-              className={tab === item.id ? 'nav-item nav-item--active' : 'nav-item'}
-              type="button"
-            >
-              <span className="nav-item__icon"><AppIcon name={item.icon} size={17} /></span>
-              <span className="nav-item__label">{item.label}</span>
-            </button>
-          ))}
-        </aside>
+        <div className="nav-rail-shell">
+          <button
+            className={`nav-edge-button nav-edge-button--left ${navEdges.left ? '' : 'nav-edge-button--hidden'}`}
+            type="button"
+            onClick={() => scrollNav(-1)}
+            aria-label="Show previous tabs"
+            tabIndex={navEdges.left ? 0 : -1}
+          >
+            ‹
+          </button>
+
+          <aside ref={navRef} className="nav-rail" aria-label="Main navigation">
+            <div className="nav-rail__label">Workspace</div>
+            {availableTabs.map(item => (
+              <button
+                key={item.id}
+                onClick={() => setActive(item.id)}
+                data-tab-id={item.id}
+                className={tab === item.id ? 'nav-item nav-item--active' : 'nav-item'}
+                type="button"
+              >
+                <span className="nav-item__icon"><AppIcon name={item.icon} size={17} /></span>
+                <span className="nav-item__label">{item.label}</span>
+              </button>
+            ))}
+          </aside>
+
+          <button
+            className={`nav-edge-button nav-edge-button--right ${navEdges.right ? '' : 'nav-edge-button--hidden'}`}
+            type="button"
+            onClick={() => scrollNav(1)}
+            aria-label="Show more tabs"
+            tabIndex={navEdges.right ? 0 : -1}
+          >
+            ›
+          </button>
+
+          <span
+            className={`nav-more-hint ${navEdges.right ? '' : 'nav-more-hint--hidden'}`}
+            aria-hidden="true"
+          >
+            More
+          </span>
+        </div>
+
         <main className="content">{render(tab)}</main>
       </div>
     </div>
