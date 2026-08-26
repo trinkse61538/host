@@ -112,7 +112,7 @@ function ActiveGuideCard({ apartment, fullGuide }: { apartment: ManagedApartment
           <h2>{apartment.apartment}</h2>
           {apartment.notes && <p>{apartment.notes}</p>}
         </div>
-        <CopyButton value={fullGuide} label="Copy guest guide" />
+        <CopyButton value={fullGuide} label="Copy guest guide" rich />
       </div>
 
       <div className="detail-grid">
@@ -255,12 +255,12 @@ function StepGuide({ apartment, steps }: { apartment: ManagedApartment; steps: s
             <li key={index}>
               <span>{index + 1}</span>
               <p><RichText text={step} /></p>
-              <CopyButton value={step} />
+              <CopyButton value={step} rich />
             </li>
           ))}
         </ol>
       ) : (
-        <pre className="message-preview">{apartment.instructions || 'No instructions yet.'}</pre>
+        <div className="message-preview"><RichText text={apartment.instructions || 'No instructions yet.'} /></div>
       )}
     </Card>
   );

@@ -95,6 +95,16 @@ function servicePeriod(lines: InvoiceLine[]): string {
   return `${displayDate(dates[0])} – ${displayDate(dates[dates.length - 1])}`;
 }
 
+function sortInvoiceLines(lines: InvoiceLine[]): InvoiceLine[] {
+  return [...lines].sort((a, b) => {
+    const dateA = a.serviceDates[0] || '9999-12-31';
+    const dateB = b.serviceDates[0] || '9999-12-31';
+    const byDate = dateA.localeCompare(dateB);
+    if (byDate !== 0) return byDate;
+    return a.apartment.localeCompare(b.apartment);
+  });
+}
+
 export function InvoicePage() {
   const { apartments } = useApartments();
   const { text } = useLocale();
@@ -121,16 +131,17 @@ export function InvoicePage() {
   }, [apartments, query]);
 
   const selected = apartments.find(apartment => apartment.id === apartmentId) || null;
-  const totalShifts = draft.lines.reduce((sum, line) => sum + line.shifts, 0);
-  const grandTotal = draft.lines.reduce((sum, line) => sum + line.shifts * line.unitPrice, 0);
-  const period = servicePeriod(draft.lines);
+  const orderedLines = useMemo(() => sortInvoiceLines(draft.lines), [draft.lines]);
+  const totalShifts = orderedLines.reduce((sum, line) => sum + line.shifts, 0);
+  const grandTotal = orderedLines.reduce((sum, line) => sum + line.shifts * line.unitPrice, 0);
+  const period = servicePeriod(orderedLines);
 
   const exportData: InvoiceExportData = {
     invoiceNo: draft.invoiceNo,
     issueDate: draft.issueDate,
     cleanerName: draft.cleanerName,
     clientName: draft.clientName,
-    lines: draft.lines,
+    lines: orderedLines,
     servicePeriod: period,
     totalShifts,
     grandTotal,
@@ -180,17 +191,17 @@ export function InvoicePage() {
 
     setDraft(current => ({
       ...current,
-      lines: [
+      lines: sortInvoiceLines([
         ...current.lines,
         {
           id: crypto.randomUUID(),
           apartmentId: selected.id,
           apartment: selected.apartment,
-          serviceDates: parsed.dates,
+          serviceDates: [...parsed.dates].sort(),
           shifts,
           unitPrice,
         },
-      ],
+      ]),
     }));
     setApartmentId('');
     setDays('');
@@ -347,9 +358,9 @@ export function InvoicePage() {
           </div>
 
           <div className="invoice-service-list">
-            {draft.lines.map(line => (
+            {orderedLines.map(line => (
               <div className="invoice-service-item" key={line.id}>
-                <div className="invoice-service-item__index">{String(draft.lines.indexOf(line) + 1).padStart(2, '0')}</div>
+                <div className="invoice-service-item__index">{String(orderedLines.indexOf(line) + 1).padStart(2, '0')}</div>
                 <div className="invoice-service-item__body">
                   <strong>{line.apartment}</strong>
                   <span>{line.serviceDates.map(value => value.slice(-2)).join(' · ')} · {line.shifts} shift{line.shifts === 1 ? '' : 's'}</span>
@@ -411,7 +422,7 @@ export function InvoicePage() {
         </div>
 
         <div className="invoice-paper-shell">
-          <InvoiceDocument draft={draft} period={period} totalShifts={totalShifts} grandTotal={grandTotal} />
+          <InvoiceDocument draft={{ ...draft, lines: orderedLines }} period={period} totalShifts={totalShifts} grandTotal={grandTotal} />
         </div>
 
         <div className="invoice-export-hint">

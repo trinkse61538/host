@@ -96,7 +96,7 @@ export function ParkingPage() {
                 <div className="toolbar__actions">
                   {canEdit && <Button variant="secondary" onClick={openEditor}>{text('Chỉnh parking', 'Edit parking')}</Button>}
                   {(locale === 'vi' ? parking.messageVi : parking.messageEn) && (
-                    <CopyButton value={locale === 'vi' ? parking.messageVi : parking.messageEn} label={text('Copy tin nhắn', 'Copy guest message')} />
+                    <CopyButton value={locale === 'vi' ? parking.messageVi : parking.messageEn} label={text('Copy tin nhắn', 'Copy guest message')} rich />
                   )}
                 </div>
               </div>
@@ -122,7 +122,7 @@ export function ParkingPage() {
                     <li key={index}>
                       <span>{index + 1}</span>
                       <p><RichText text={step} /></p>
-                      <CopyButton value={step} />
+                      <CopyButton value={step} rich />
                     </li>
                   ))}
                 </ol>
