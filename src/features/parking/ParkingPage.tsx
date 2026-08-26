@@ -7,6 +7,7 @@ import { Card } from '../../shared/components/Card';
 import { CopyButton } from '../../shared/components/CopyButton';
 import { Button } from '../../shared/components/Button';
 import { RichText } from '../../shared/components/RichText';
+import { GuideLanguageSwitch } from '../../shared/components/GuideLanguageSwitch';
 import { copyImageAsPng } from '../../shared/lib/clipboardImage';
 import { photoAssetUrl } from '../../infrastructure/staticMedia/photoAssets';
 import { saveApartment } from '../../infrastructure/firebase/apartmentRepository';
@@ -16,7 +17,7 @@ import { effectiveParking, hasParkingGuide } from './parkingDefaults';
 export function ParkingPage() {
   const { apartments, canEdit } = useApartments();
   const { user } = useAuth();
-  const { locale, text } = useLocale();
+  const { locale, setLocale, text } = useLocale();
   const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState('');
   const [editing, setEditing] = useState<ManagedApartment | null>(null);
@@ -69,7 +70,10 @@ export function ParkingPage() {
         <Card className="guide-sidebar">
           <div className="stack">
             <span className="eyebrow">Parking operations</span>
-            <h2>{text('Hướng dẫn đậu xe', 'Parking Guide')}</h2>
+            <div className="mobile-guide-heading">
+              <h2>{text('Hướng dẫn đậu xe', 'Parking Guide')}</h2>
+              <GuideLanguageSwitch value={locale} onChange={setLocale} />
+            </div>
             <input className="input" value={query} onChange={event => setQuery(event.target.value)} placeholder={text('Tìm căn hộ', 'Search apartment')} />
             <select className="input" value={activeId} onChange={event => setActiveId(event.target.value)}>
               <option value="">{text('— Chọn căn hộ —', '— Select an apartment —')}</option>

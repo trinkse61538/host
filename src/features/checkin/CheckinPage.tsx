@@ -9,11 +9,12 @@ import { Button } from '../../shared/components/Button';
 import { copyImageAsPng } from '../../shared/lib/clipboardImage';
 import { photoAssetUrl } from '../../infrastructure/staticMedia/photoAssets';
 import { RichText } from '../../shared/components/RichText';
+import { GuideLanguageSwitch } from '../../shared/components/GuideLanguageSwitch';
 import { findAgentFallback, policyStatus, statusLabel } from './agentPolicy';
 
 export function CheckinPage() {
   const { apartments } = useApartments();
-  const { locale, text } = useLocale();
+  const { locale, setLocale, text } = useLocale();
   const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState('');
 
@@ -43,7 +44,10 @@ export function CheckinPage() {
       <Card className="checkin-sidebar feature-card feature-card--checkin">
         <div className="stack">
           <span className="eyebrow">Guest access</span>
-          <h2>{text('Hướng dẫn check-in', 'Check-in guides')}</h2>
+          <div className="mobile-guide-heading">
+            <h2>{text('Hướng dẫn check-in', 'Check-in guides')}</h2>
+            <GuideLanguageSwitch value={locale} onChange={setLocale} />
+          </div>
           <input
             className="input"
             value={query}
@@ -105,7 +109,7 @@ function hasCheckinContent(apartment: ManagedApartment): boolean {
 
 function ActiveGuideCard({ apartment, fullGuide }: { apartment: ManagedApartment; fullGuide: string }) {
   return (
-    <Card className="feature-card feature-card--checkin">
+    <Card className="feature-card feature-card--checkin active-guide-card">
       <div className="card-heading">
         <div>
           <span className="eyebrow">Active guide</span>

@@ -124,7 +124,7 @@ export function AppShell({ render }: { render: (tab: AppTab) => ReactNode }) {
           >
             {locale === 'vi' ? 'VI' : 'EN'}
           </button>
-          <button className="icon-button" type="button" onClick={toggle} title="Toggle theme">
+          <button className="icon-button theme-button" type="button" onClick={toggle} title="Toggle theme" aria-label="Toggle light and dark theme">
             <AppIcon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
           </button>
           <div className="user-chip">
