@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const passphrase = process.env.PWA_ACCESS_PASSPHRASE || process.argv[2] || '';
-const vaultDir = path.join(projectRoot, 'public', 'legacy-secure');
+const vaultDir = path.join(projectRoot, 'migration', 'legacy-secure');
 const envelopePath = path.join(vaultDir, 'secure-data.json');
 const outputDir = path.join(projectRoot, 'migration-output', 'legacy-checkin-images');
 
@@ -76,7 +76,7 @@ const manifest = {
   exportedAt: new Date().toISOString(),
   images: count,
   checkinRecords: Array.isArray(payload.checkin) ? payload.checkin.length : 0,
-  source: 'public/legacy-secure',
+  source: 'migration/legacy-secure',
 };
 fs.writeFileSync(
   path.join(projectRoot, 'migration-output', 'legacy-manifest.json'),

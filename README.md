@@ -60,15 +60,13 @@ npm run build
 npm run dev
 ```
 
-## Import images from the old repo
+## Legacy migration material
 
-If the old project is still at `~/Desktop/airbnb`:
+The live application uses repository-managed media under `public/media/`.
 
-```bash
-npm run import:old-media
-```
-
-This imports Git-tracked parking images and the old logo. Check-in images that only exist in Firebase Storage need a one-time export; see [`MIGRATE-MEDIA.md`](./MIGRATE-MEDIA.md).
+Historical migration instructions and the encrypted legacy vault are kept outside the
+deployed PWA. See [`docs/MAINTENANCE.md`](./docs/MAINTENANCE.md) and
+`docs/archive/` when working on legacy migration tasks.
 
 ## Firebase
 
@@ -86,9 +84,11 @@ There is intentionally no Firebase Storage runtime dependency. This Firebase pro
 The repo includes `CNAME` for `host.khaitringuyen.com` and `.github/workflows/deploy-pages.yml`.
 Configure Pages to use **GitHub Actions**, then point DNS CNAME `host` to your GitHub Pages hostname.
 
-## Included media in V3.1
+## Media ownership
 
-This package already contains the media recovered from the old GitHub Pages deployment: 19 parking JPG files, the project logo, 3 PWA icons, and a backup of 34 encrypted legacy secure-image blobs. See `MIGRATE-MEDIA.md` for Check-in migration and the security note about publishing sensitive entry images as public static URLs.
+Live PWA assets are stored under `public/media/` and PWA icons under `public/icons/`.
+The encrypted legacy image vault is retained only under `migration/legacy-secure/` and
+is not shipped by GitHub Pages.
 
 ## Target repository for this package
 
