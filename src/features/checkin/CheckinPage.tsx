@@ -246,9 +246,21 @@ function PhotoWalkthrough({ apartment }: { apartment: ManagedApartment }) {
 }
 
 function StepGuide({ apartment, steps }: { apartment: ManagedApartment; steps: string[] }) {
+  const allSteps = steps
+    .map((step, index) => `STEP ${index + 1}\n${step}`)
+    .join('\n\n');
+
   return (
     <Card>
-      <span className="eyebrow">Step-by-step guest message</span>
+      <div className="card-heading">
+        <div>
+          <span className="eyebrow">Step-by-step guest message</span>
+          <h3>Guest steps</h3>
+        </div>
+        {steps.length > 0 && (
+          <CopyButton value={allSteps} label="Copy all steps" rich />
+        )}
+      </div>
       {steps.length ? (
         <ol className="step-list">
           {steps.map((step, index) => (

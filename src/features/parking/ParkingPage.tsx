@@ -32,6 +32,12 @@ export function ParkingPage() {
 
   const active = activeId ? records.find(apartment => apartment.id === activeId) || null : null;
   const parking = active ? effectiveParking(active) : null;
+  const parkingSteps = parking
+    ? (locale === 'vi' ? parking.instructionsVi : parking.instructionsEn)
+    : [];
+  const allParkingSteps = parkingSteps
+    .map((step, index) => `${locale === 'vi' ? 'BƯỚC' : 'STEP'} ${index + 1}\n${step}`)
+    .join('\n\n');
 
   const openEditor = () => {
     if (!active) return;
@@ -114,11 +120,21 @@ export function ParkingPage() {
               )}
             </Card>
 
-            {(locale === 'vi' ? parking.instructionsVi : parking.instructionsEn).length > 0 && (
+            {parkingSteps.length > 0 && (
               <Card>
-                <span className="eyebrow">{text('Từng bước', 'Step by step')}</span>
+                <div className="card-heading">
+                  <div>
+                    <span className="eyebrow">{text('Từng bước', 'Step by step')}</span>
+                    <h3>{text('Hướng dẫn cho khách', 'Guest steps')}</h3>
+                  </div>
+                  <CopyButton
+                    value={allParkingSteps}
+                    label={text('Copy tất cả', 'Copy all steps')}
+                    rich
+                  />
+                </div>
                 <ol className="step-list">
-                  {(locale === 'vi' ? parking.instructionsVi : parking.instructionsEn).map((step, index) => (
+                  {parkingSteps.map((step, index) => (
                     <li key={index}>
                       <span>{index + 1}</span>
                       <p><RichText text={step} /></p>
