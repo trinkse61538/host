@@ -1,0 +1,106 @@
+.parking-editor-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.parking-enabled-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.parking-enabled-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand);
+}
+
+.parking-enabled-toggle span {
+  margin: 0;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.parking-seeded-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.parking-seeded-notice > span {
+  line-height: 1.45;
+}
+
+.parking-photo-editor-list {
+  display: grid;
+  gap: 12px;
+}
+
+.parking-photo-editor-row {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+
+.parking-photo-editor-preview {
+  min-height: 135px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px dashed var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.parking-photo-editor-preview img {
+  width: 100%;
+  height: 100%;
+  min-height: 135px;
+  object-fit: cover;
+}
+
+.parking-photo-editor-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.parking-internal-details summary {
+  cursor: pointer;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.parking-internal-grid {
+  margin-top: 15px;
+}
+
+.parking-modal {
+  width: min(1080px, calc(100vw - 32px));
+}
+
+@media (max-width: 720px) {
+  .parking-seeded-notice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .parking-photo-editor-row {
+    grid-template-columns: 1fr;
+  }
+}

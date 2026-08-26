@@ -8,6 +8,7 @@ import { StatusBadge } from '../../shared/components/StatusBadge';
 import { Button } from '../../shared/components/Button';
 import { copyImageAsPng } from '../../shared/lib/clipboardImage';
 import { photoAssetUrl } from '../../infrastructure/staticMedia/photoAssets';
+import { RichText } from '../../shared/components/RichText';
 import { findAgentFallback, policyStatus, statusLabel } from './agentPolicy';
 
 export function CheckinPage() {
@@ -253,7 +254,7 @@ function StepGuide({ apartment, steps }: { apartment: ManagedApartment; steps: s
           {steps.map((step, index) => (
             <li key={index}>
               <span>{index + 1}</span>
-              <p>{step}</p>
+              <p><RichText text={step} /></p>
               <CopyButton value={step} />
             </li>
           ))}

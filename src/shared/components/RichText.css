@@ -1,0 +1,36 @@
+.rich-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.rich-text strong {
+  color: var(--text);
+  font-weight: 850;
+  letter-spacing: -.01em;
+}
+
+.rich-text code {
+  display: inline;
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--brand) 16%, var(--border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--brand-soft) 68%, var(--surface));
+  color: var(--text);
+  font: 700 .92em/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.rich-text a {
+  color: var(--brand);
+  font-weight: 750;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--brand) 38%, transparent);
+}
+
+.rich-text a:hover {
+  border-bottom-color: var(--brand);
+}
+
+.step-list p .rich-text {
+  display: block;
+  line-height: 1.65;
+}

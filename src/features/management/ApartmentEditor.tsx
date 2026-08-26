@@ -1,6 +1,7 @@
 import type { ManagedApartment } from '../../domain/models';
 import { Card } from '../../shared/components/Card';
 import { Button } from '../../shared/components/Button';
+import { ParkingGuideEditor } from '../parking/ParkingGuideEditor';
 import { StaticPhotoEditor } from './StaticPhotoEditor';
 
 interface ApartmentEditorProps {
@@ -63,6 +64,8 @@ export function ApartmentEditor({ apartment, onChange, onCancel, onSave }: Apart
               onChange={value => update('instructionsEn', splitSteps(value))}
             />
           </Card>
+
+          <ParkingGuideEditor apartment={apartment} onChange={onChange} />
 
           <Card>
             <h3>Agent & Airbnb policy</h3>
