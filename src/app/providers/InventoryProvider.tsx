@@ -33,7 +33,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState('');
 
   const refresh = useCallback(async () => {
-    if (!sheetsAccessToken) { setError('Sign in again with Google to refresh Sheets data. Saved snapshot is still available.'); return; }
+    if (!sheetsAccessToken) { setError('Connect Google Sheets to refresh inventory. Saved snapshot is still available.'); return; }
     setLoading(true); setError('');
     try {
       const terms = shortageTermsInput.split(',').map(value => value.trim()).filter(Boolean);

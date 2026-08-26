@@ -30,7 +30,7 @@ export function InventoryPage() {
         <div className="toolbar__actions">
           <input className="input" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search apartment" />
           <Button variant={alertsOnly ? 'primary' : 'secondary'} onClick={() => setAlertsOnly(value => !value)}>{alertsOnly ? 'Showing alerts' : 'All units'}</Button>
-          {auth.sheetsAccessToken ? <Button onClick={() => void inventory.refresh()} disabled={inventory.loading}>{inventory.loading ? 'Refreshing…' : 'Refresh Sheets'}</Button> : <Button onClick={() => void auth.signIn()} disabled={auth.signingIn}>{auth.signingIn ? 'Connecting…' : 'Reconnect Google Sheets'}</Button>}
+          {auth.sheetsAccessToken ? <Button onClick={() => void inventory.refresh()} disabled={inventory.loading}>{inventory.loading ? 'Refreshing…' : 'Refresh Sheets'}</Button> : <Button onClick={() => void auth.connectSheets()} disabled={auth.connectingSheets}>{auth.connectingSheets ? 'Connecting…' : 'Connect Google Sheets'}</Button>}
         </div>
       </div>
       <details className="settings-disclosure">

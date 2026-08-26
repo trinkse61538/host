@@ -1,14 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from '../../infrastructure/firebase/client';
-import { signInWithGoogle, signOutUser } from '../../infrastructure/firebase/auth';
+import { connectGoogleSheets, signInWithGoogle, signOutUser } from '../../infrastructure/firebase/auth';
 
 interface AuthContextValue {
   user: User | null;
   sheetsAccessToken: string | null;
   initializing: boolean;
   signingIn: boolean;
+  connectingSheets: boolean;
   signIn: () => Promise<void>;
+  connectSheets: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -19,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [sheetsAccessToken, setSheetsAccessToken] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
+  const [connectingSheets, setConnectingSheets] = useState(false);
 
   useEffect(() => onAuthStateChanged(auth, next => {
     setUser(next);
@@ -31,20 +34,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sheetsAccessToken,
     initializing,
     signingIn,
+    connectingSheets,
     signIn: async () => {
       setSigningIn(true);
       try {
-        const result = await signInWithGoogle();
-        setUser(result.user);
-        setSheetsAccessToken(result.accessToken);
+        const nextUser = await signInWithGoogle();
+        setUser(nextUser);
       } finally { setSigningIn(false); }
+    },
+    connectSheets: async () => {
+      if (!user) throw new Error('Sign in before connecting Google Sheets.');
+      setConnectingSheets(true);
+      try {
+        const accessToken = await connectGoogleSheets(user);
+        setSheetsAccessToken(accessToken);
+      } finally { setConnectingSheets(false); }
     },
     signOut: async () => {
       await signOutUser();
       setUser(null);
       setSheetsAccessToken(null);
     },
-  }), [initializing, sheetsAccessToken, signingIn, user]);
+  }), [connectingSheets, initializing, sheetsAccessToken, signingIn, user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
