@@ -8,14 +8,8 @@ import { ApartmentCombobox } from '../../shared/components/ApartmentCombobox';
 export function WifiPage() {
   const { apartments } = useApartments();
   const { text } = useLocale();
-  const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState('');
   const records = useMemo(() => apartments.filter(apartment => apartment.wifiName || apartment.password || apartment.wifiNote), [apartments]);
-  const visible = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return records;
-    return records.filter(apartment => apartment.apartment.toLowerCase().includes(needle) || apartment.wifiName.toLowerCase().includes(needle));
-  }, [query, records]);
   const active = activeId ? records.find(record => record.id === activeId) || null : null;
 
   return <div className="guide-layout">

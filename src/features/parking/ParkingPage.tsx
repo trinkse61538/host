@@ -19,19 +19,12 @@ export function ParkingPage() {
   const { apartments, canEdit } = useApartments();
   const { user } = useAuth();
   const { locale, setLocale, text } = useLocale();
-  const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState('');
   const [editing, setEditing] = useState<ManagedApartment | null>(null);
   const [saving, setSaving] = useState(false);
   const [editorError, setEditorError] = useState('');
 
   const records = useMemo(() => apartments.filter(hasParkingGuide), [apartments]);
-  const visible = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return records;
-    return records.filter(apartment => `${apartment.apartment} ${apartment.propertyAddress}`.toLowerCase().includes(needle));
-  }, [query, records]);
-
   const active = activeId ? records.find(apartment => apartment.id === activeId) || null : null;
   const parking = active ? effectiveParking(active) : null;
   const parkingSteps = parking

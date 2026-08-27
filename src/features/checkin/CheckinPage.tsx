@@ -16,21 +16,12 @@ import { findAgentFallback, policyStatus, statusLabel } from './agentPolicy';
 export function CheckinPage() {
   const { apartments } = useApartments();
   const { locale, setLocale, text } = useLocale();
-  const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState('');
 
   const records = useMemo(
     () => apartments.filter(hasCheckinContent),
     [apartments],
   );
-
-  const visible = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return records;
-    return records.filter(record =>
-      `${record.apartment} ${record.keyAddress} ${record.propertyAddress}`.toLowerCase().includes(needle),
-    );
-  }, [query, records]);
 
   const active = activeId ? records.find(record => record.id === activeId) || null : null;
   const steps = active ? (locale === 'vi' ? active.instructionsVi : active.instructionsEn) : [];

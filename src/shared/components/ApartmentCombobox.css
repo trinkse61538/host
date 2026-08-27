@@ -12,17 +12,20 @@
 }
 
 .apartment-combobox__control {
-  min-height: 44px;
+  min-height: 46px;
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 7px;
   padding: 0 7px 0 12px;
   border: 1px solid var(--border);
-  border-radius: 11px;
+  border-radius: 12px;
   background: var(--surface);
   color: var(--muted);
-  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+  transition:
+    border-color .16s ease,
+    box-shadow .16s ease,
+    background .16s ease;
 }
 
 .apartment-combobox__control:focus-within,
@@ -34,7 +37,7 @@
 .apartment-combobox__input {
   width: 100%;
   min-width: 0;
-  height: 42px;
+  height: 44px;
   padding: 0;
   border: 0;
   outline: 0;
@@ -43,7 +46,9 @@
   font: inherit;
 }
 
-.apartment-combobox__input::placeholder { color: var(--muted); }
+.apartment-combobox__input::placeholder {
+  color: var(--muted);
+}
 
 .apartment-combobox__clear,
 .apartment-combobox__toggle {
@@ -72,7 +77,9 @@
   transition: transform .16s ease;
 }
 
-.apartment-combobox__control--open .apartment-combobox__toggle { transform: rotate(180deg); }
+.apartment-combobox__control--open .apartment-combobox__toggle {
+  transform: rotate(180deg);
+}
 
 .apartment-combobox__clear:hover,
 .apartment-combobox__toggle:hover {
@@ -80,59 +87,112 @@
   color: var(--text);
 }
 
+/*
+ * Results are portalled into document.body.
+ * This is intentional: feature cards use overflow:hidden for their accent
+ * decoration, which otherwise clips an absolutely-positioned autocomplete.
+ */
 .apartment-combobox__results {
-  position: absolute;
-  z-index: 70;
-  top: calc(100% + 7px);
-  left: 0;
-  right: 0;
-  max-height: min(360px, 52vh);
+  position: fixed;
+  z-index: 220;
+  display: flex;
+  flex-direction: column;
+  min-height: 112px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--brand) 18%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 98%, transparent);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, .24);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+}
+
+.apartment-combobox__results-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 9px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
+}
+
+.apartment-combobox__results-header span {
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.apartment-combobox__results-header small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.apartment-combobox__results-scroll {
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface) 97%, transparent);
-  box-shadow: 0 18px 48px rgba(15, 23, 42, .16);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-overflow-scrolling: touch;
 }
 
 .apartment-combobox__result {
   width: 100%;
-  min-height: 54px;
+  min-height: 58px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 10px 11px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 11px;
   background: transparent;
   color: var(--text);
   text-align: left;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
-.apartment-combobox__result + .apartment-combobox__result { margin-top: 2px; }
-.apartment-combobox__result--active { background: var(--surface-soft); }
-.apartment-combobox__result--selected { background: color-mix(in srgb, var(--brand) 9%, var(--surface)); }
+.apartment-combobox__result + .apartment-combobox__result {
+  margin-top: 2px;
+}
+
+.apartment-combobox__result--active {
+  background: var(--surface-soft);
+}
+
+.apartment-combobox__result--selected {
+  background: color-mix(in srgb, var(--brand) 10%, var(--surface));
+}
 
 .apartment-combobox__result-copy {
   min-width: 0;
   display: grid;
-  gap: 3px;
+  gap: 4px;
 }
 
-.apartment-combobox__result-copy strong,
-.apartment-combobox__result-copy small {
+.apartment-combobox__result-copy strong {
   overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.apartment-combobox__result-copy strong { font-size: 12px; }
-.apartment-combobox__result-copy small { color: var(--muted); font-size: 10px; }
+.apartment-combobox__result-copy small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .apartment-combobox__badge {
   flex: 0 0 auto;
@@ -145,24 +205,75 @@
   letter-spacing: .04em;
 }
 
-.apartment-combobox__empty,
-.apartment-combobox__hint {
-  padding: 12px;
+.apartment-combobox__empty {
+  padding: 22px 14px;
   color: var(--muted);
-  font-size: 10px;
-  line-height: 1.5;
+  font-size: 11px;
+  text-align: center;
 }
 
 .apartment-combobox__hint {
+  flex: 0 0 auto;
+  padding: 8px 10px;
   border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+  color: var(--muted);
+  font-size: 9px;
   text-align: center;
 }
 
 @media (max-width: 900px) {
-  .apartment-combobox__control { min-height: 50px; border-radius: 13px; }
-  .apartment-combobox__input { height: 48px; font-size: 16px; }
-  .apartment-combobox__results { max-height: min(390px, 48dvh); padding: 7px; border-radius: 16px; }
-  .apartment-combobox__result { min-height: 62px; padding: 11px 12px; }
-  .apartment-combobox__result-copy strong { font-size: 13px; }
-  .apartment-combobox__result-copy small { font-size: 11px; }
+  .apartment-combobox__control {
+    min-height: 52px;
+    border-radius: 14px;
+  }
+
+  .apartment-combobox__input {
+    height: 50px;
+    font-size: 16px; /* prevents iOS Safari zoom */
+  }
+
+  .apartment-combobox__results {
+    z-index: 240;
+    border-radius: 18px;
+    box-shadow: 0 26px 74px rgba(15, 23, 42, .28);
+  }
+
+  .apartment-combobox__results-header {
+    padding: 11px 13px 10px;
+  }
+
+  .apartment-combobox__results-scroll {
+    padding: 7px;
+  }
+
+  .apartment-combobox__result {
+    min-height: 68px;
+    padding: 12px 13px;
+    border-radius: 12px;
+  }
+
+  .apartment-combobox__result-copy strong {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 1.3;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .apartment-combobox__result-copy small {
+    font-size: 11px;
+  }
+
+  .apartment-combobox__badge {
+    padding: 6px 8px;
+    font-size: 9px;
+  }
+
+  .apartment-combobox__hint {
+    padding: 9px 10px;
+    font-size: 10px;
+  }
 }
