@@ -13,4 +13,15 @@ describe('buildCleanerMessage', () => {
   it('keeps an existing @ prefix', () => {
     expect(buildCleanerMessage('@keanu', ['Unit A'])).toContain('Hi @keanu');
   });
+
+  it('includes the Stock Tracker link when provided', () => {
+    const message = buildCleanerMessage(
+      '@keanu',
+      ['Unit A'],
+      'https://docs.google.com/spreadsheets/d/test-sheet/edit',
+    );
+
+    expect(message).toContain('📊 Stock Tracker: https://docs.google.com/spreadsheets/d/test-sheet/edit');
+  });
+
 });

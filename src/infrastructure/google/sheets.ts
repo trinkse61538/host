@@ -7,6 +7,13 @@ export function extractSpreadsheetId(urlOrId: string): string {
   return match?.[1] || trimmed;
 }
 
+export function spreadsheetWebUrl(urlOrId: string): string {
+  const spreadsheetId = extractSpreadsheetId(urlOrId);
+  return spreadsheetId
+    ? `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`
+    : '';
+}
+
 async function googleFetch(url: string, accessToken: string): Promise<Response> {
   const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (!response.ok) {

@@ -28,4 +28,14 @@ describe('buildShortageMessage', () => {
     expect(message).toContain('Apartment Unit B is low on: Coffee.');
     expect(message).toContain('keep the receipt');
   });
+
+  it('includes the Stock Tracker link when provided', () => {
+    const message = buildShortageMessage(
+      [report('Unit A', ['Water'])],
+      'https://docs.google.com/spreadsheets/d/test-sheet/edit',
+    );
+
+    expect(message).toContain('📊 Stock Tracker: https://docs.google.com/spreadsheets/d/test-sheet/edit');
+  });
+
 });

@@ -6,11 +6,12 @@ import { CopyButton } from '../../shared/components/CopyButton';
 import { MobileSelectionActionBar } from '../../shared/components/MobileSelectionActionBar';
 import { SelectionSearch } from '../../shared/components/SelectionSearch';
 import { dispatchNotification } from '../../infrastructure/notifications/dispatch';
+import { spreadsheetWebUrl } from '../../infrastructure/google/sheets';
 import { buildShortageMessage } from './messages';
 import { useNotificationConfigs } from './useNotificationConfigs';
 
 export function NotificationsPage() {
-  const { reports } = useInventory();
+  const { reports, spreadsheetInput } = useInventory();
   const [configs, setConfigs] = useNotificationConfigs();
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState('');
@@ -45,9 +46,14 @@ export function NotificationsPage() {
     [alerts, selected],
   );
 
+  const stockTrackerUrl = useMemo(
+    () => spreadsheetWebUrl(spreadsheetInput),
+    [spreadsheetInput],
+  );
+
   const message = useMemo(
-    () => buildShortageMessage(selectedReports),
-    [selectedReports],
+    () => buildShortageMessage(selectedReports, stockTrackerUrl),
+    [selectedReports, stockTrackerUrl],
   );
 
   const toggle = (sheetName: string) => {

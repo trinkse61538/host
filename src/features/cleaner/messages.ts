@@ -1,4 +1,8 @@
-export function buildCleanerMessage(cleaner: string, selectedApartments: string[]): string {
+export function buildCleanerMessage(
+  cleaner: string,
+  selectedApartments: string[],
+  stockTrackerUrl = '',
+): string {
   const cleanedHandle = cleaner.trim();
   const handle = cleanedHandle
     ? (cleanedHandle.startsWith('@') ? cleanedHandle : `@${cleanedHandle}`)
@@ -16,7 +20,9 @@ Just a quick reminder that you have cleaned ${countLabel} ${unitWord} today:
 
 ${unitList}
 
-Could you please fill in the missing supplies/amenities in the Stock Tracker file?
+Could you please fill in the missing supplies/amenities in the Stock Tracker file?${stockTrackerUrl ? `
+
+📊 Stock Tracker: ${stockTrackerUrl}` : ''}
 
 Thank you so much for your help! 🙏`;
 }

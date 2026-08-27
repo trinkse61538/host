@@ -6,11 +6,12 @@ import { CopyButton } from '../../shared/components/CopyButton';
 import { MobileSelectionActionBar } from '../../shared/components/MobileSelectionActionBar';
 import { SelectionSearch } from '../../shared/components/SelectionSearch';
 import { dispatchNotification } from '../../infrastructure/notifications/dispatch';
+import { spreadsheetWebUrl } from '../../infrastructure/google/sheets';
 import { useNotificationConfigs } from '../notifications/useNotificationConfigs';
 import { buildCleanerMessage } from './messages';
 
 export function CleanerPage() {
-  const { reports } = useInventory();
+  const { reports, spreadsheetInput } = useInventory();
   const [configs] = useNotificationConfigs();
   const [cleaner, setCleaner] = useState('');
   const [query, setQuery] = useState('');
@@ -28,9 +29,14 @@ export function CleanerPage() {
     return reports.filter(report => report.sheetName.toLowerCase().includes(needle));
   }, [query, reports]);
 
+  const stockTrackerUrl = useMemo(
+    () => spreadsheetWebUrl(spreadsheetInput),
+    [spreadsheetInput],
+  );
+
   const message = useMemo(
-    () => buildCleanerMessage(cleaner, selected),
-    [cleaner, selected],
+    () => buildCleanerMessage(cleaner, selected, stockTrackerUrl),
+    [cleaner, selected, stockTrackerUrl],
   );
 
   const toggle = (sheetName: string) => {
