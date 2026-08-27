@@ -1,0 +1,102 @@
+.selection-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.selection-search__control {
+  min-height: 43px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 0 7px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.selection-search__control:focus-within {
+  border-color: color-mix(in srgb, var(--brand) 55%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 11%, transparent);
+}
+
+.selection-search__control input {
+  min-width: 0;
+  width: 100%;
+  height: 41px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+.selection-search__control input::placeholder {
+  color: var(--muted);
+}
+
+.selection-search__control button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.selection-search__control button:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+.selection-search__count {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.selection-search__empty {
+  margin-top: 12px;
+  padding: 18px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+@media (max-width: 620px) {
+  .selection-search {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .selection-search__control {
+    min-height: 50px;
+    border-radius: 14px;
+  }
+
+  .selection-search__control input {
+    height: 48px;
+    font-size: 16px; /* prevent iOS auto zoom */
+  }
+
+  .selection-search__count {
+    padding-left: 3px;
+    font-size: 10px;
+  }
+}

@@ -4,6 +4,7 @@ import { Card } from '../../shared/components/Card';
 import { Button } from '../../shared/components/Button';
 import { CopyButton } from '../../shared/components/CopyButton';
 import { MobileSelectionActionBar } from '../../shared/components/MobileSelectionActionBar';
+import { SelectionSearch } from '../../shared/components/SelectionSearch';
 import { dispatchNotification } from '../../infrastructure/notifications/dispatch';
 import { buildShortageMessage } from './messages';
 import { useNotificationConfigs } from './useNotificationConfigs';
@@ -12,12 +13,27 @@ export function NotificationsPage() {
   const { reports } = useInventory();
   const [configs, setConfigs] = useNotificationConfigs();
   const [selected, setSelected] = useState<string[]>([]);
+  const [query, setQuery] = useState('');
   const [result, setResult] = useState('');
 
   const alerts = useMemo(
     () => reports.filter(report => report.hasLowStock),
     [reports],
   );
+
+  const visibleAlerts = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return alerts;
+
+    return alerts.filter(report => {
+      const searchable = [
+        report.sheetName,
+        ...report.lowItems.map(item => item.name),
+      ].join(' ').toLowerCase();
+
+      return searchable.includes(needle);
+    });
+  }, [alerts, query]);
 
   useEffect(() => {
     const available = new Set(alerts.map(report => report.sheetName));
@@ -67,10 +83,13 @@ export function NotificationsPage() {
                 <span>{selected.length}/{alerts.length}</span>
                 <Button
                   variant="secondary"
-                  onClick={() => setSelected(alerts.map(report => report.sheetName))}
-                  disabled={!alerts.length}
+                  onClick={() => setSelected(current => Array.from(new Set([
+                    ...current,
+                    ...visibleAlerts.map(report => report.sheetName),
+                  ])))}
+                  disabled={!visibleAlerts.length}
                 >
-                  Select all
+                  {query.trim() ? 'Select visible' : 'Select all'}
                 </Button>
                 <Button
                   variant="ghost"
@@ -82,9 +101,18 @@ export function NotificationsPage() {
               </div>
             </div>
 
-            <div className="selection-list">
-              {alerts.map(report => (
-                <label key={report.sheetName} className="selection-row">
+            <SelectionSearch
+              value={query}
+              onChange={setQuery}
+              placeholder="Search apartment or shortage item…"
+              resultCount={visibleAlerts.length}
+              totalCount={alerts.length}
+            />
+
+            {visibleAlerts.length ? (
+              <div className="selection-list">
+                {visibleAlerts.map(report => (
+                  <label key={report.sheetName} className="selection-row">
                   <input
                     type="checkbox"
                     checked={selected.includes(report.sheetName)}
@@ -94,9 +122,14 @@ export function NotificationsPage() {
                     <strong>{report.sheetName}</strong>
                     <small>{report.lowItems.map(item => item.name).join(', ')}</small>
                   </span>
-                </label>
-              ))}
-            </div>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <div className="selection-search__empty">
+                No shortage alerts match “{query}”.
+              </div>
+            )}
           </Card>
 
           <Card>

@@ -4,6 +4,7 @@ import { Card } from '../../shared/components/Card';
 import { Button } from '../../shared/components/Button';
 import { CopyButton } from '../../shared/components/CopyButton';
 import { MobileSelectionActionBar } from '../../shared/components/MobileSelectionActionBar';
+import { SelectionSearch } from '../../shared/components/SelectionSearch';
 import { dispatchNotification } from '../../infrastructure/notifications/dispatch';
 import { useNotificationConfigs } from '../notifications/useNotificationConfigs';
 import { buildCleanerMessage } from './messages';
@@ -12,6 +13,7 @@ export function CleanerPage() {
   const { reports } = useInventory();
   const [configs] = useNotificationConfigs();
   const [cleaner, setCleaner] = useState('');
+  const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [result, setResult] = useState('');
 
@@ -19,6 +21,12 @@ export function CleanerPage() {
     const available = new Set(reports.map(report => report.sheetName));
     setSelected(current => current.filter(name => available.has(name)));
   }, [reports]);
+
+  const visibleReports = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return reports;
+    return reports.filter(report => report.sheetName.toLowerCase().includes(needle));
+  }, [query, reports]);
 
   const message = useMemo(
     () => buildCleanerMessage(cleaner, selected),
@@ -58,10 +66,13 @@ export function CleanerPage() {
               <span>{selected.length}/{reports.length}</span>
               <Button
                 variant="secondary"
-                onClick={() => setSelected(reports.map(report => report.sheetName))}
-                disabled={!reports.length}
+                onClick={() => setSelected(current => Array.from(new Set([
+                  ...current,
+                  ...visibleReports.map(report => report.sheetName),
+                ])))}
+                disabled={!visibleReports.length}
               >
-                Select all
+                {query.trim() ? 'Select visible' : 'Select all'}
               </Button>
               <Button
                 variant="ghost"
@@ -83,18 +94,32 @@ export function CleanerPage() {
             />
           </label>
 
-          <div className="selection-list">
-            {reports.map(report => (
-              <label key={report.sheetName} className="selection-row">
+          <SelectionSearch
+            value={query}
+            onChange={setQuery}
+            placeholder="Search apartment…"
+            resultCount={visibleReports.length}
+            totalCount={reports.length}
+          />
+
+          {visibleReports.length ? (
+            <div className="selection-list">
+              {visibleReports.map(report => (
+                <label key={report.sheetName} className="selection-row">
                 <input
                   type="checkbox"
                   checked={selected.includes(report.sheetName)}
                   onChange={() => toggle(report.sheetName)}
                 />
                 <span>{report.sheetName}</span>
-              </label>
-            ))}
-          </div>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div className="selection-search__empty">
+              No apartments match “{query}”.
+            </div>
+          )}
         </Card>
 
         <Card className="preview-card">
