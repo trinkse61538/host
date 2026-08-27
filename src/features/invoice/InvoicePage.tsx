@@ -4,6 +4,7 @@ import { useLocale } from '../../app/providers/LocaleProvider';
 import { Button } from '../../shared/components/Button';
 import { Card } from '../../shared/components/Card';
 import { AppIcon } from '../../shared/components/AppIcon';
+import { ApartmentCombobox } from '../../shared/components/ApartmentCombobox';
 import {
   copyInvoiceImage,
   downloadInvoicePdf,
@@ -248,7 +249,6 @@ export function InvoicePage() {
     setDraft(initialDraft());
     setApartmentId('');
     setDays('');
-    setQuery('');
     setShifts(1);
     setUnitPrice(0);
     setNotice('');
@@ -299,25 +299,17 @@ export function InvoicePage() {
           </div>
 
           <div className="form-grid">
-            <label className="field-wide">
-              <span>{text('Tìm căn hộ', 'Search apartment')}</span>
-              <div className="input-with-icon">
-                <AppIcon name="search" size={16} />
-                <input
-                  className="input"
-                  value={query}
-                  onChange={event => setQuery(event.target.value)}
-                  placeholder={text('Tên căn hộ hoặc địa chỉ', 'Apartment name or address')}
-                />
-              </div>
-            </label>
-            <label className="field-wide">
-              <span>{text('Chọn căn hộ', 'Apartment')}</span>
-              <select className="input" value={apartmentId} onChange={event => chooseApartment(event.target.value)}>
-                <option value="">— Select apartment —</option>
-                {options.map(apartment => <option key={apartment.id} value={apartment.id}>{apartment.apartment}</option>)}
-              </select>
-            </label>
+            <ApartmentCombobox
+              className="field-wide"
+              apartments={apartments}
+              value={apartmentId}
+              onChange={chooseApartment}
+              label={text('Căn hộ', 'Apartment')}
+              placeholder={text('Gõ tên căn hộ hoặc địa chỉ…', 'Type apartment name or address…')}
+              emptyText={text('Không tìm thấy căn phù hợp.', 'No matching apartment.')}
+              getDescription={apartment => apartment.propertyAddress}
+              getSearchText={apartment => `${apartment.apartment} ${apartment.propertyAddress}`}
+            />
             <label>
               <span>{text('Ngày dọn', 'Service days')}</span>
               <input className="input" value={days} onChange={event => setDays(event.target.value)} placeholder="2; 5; 18" />

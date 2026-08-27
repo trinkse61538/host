@@ -8,6 +8,7 @@ import { CopyButton } from '../../shared/components/CopyButton';
 import { Button } from '../../shared/components/Button';
 import { RichText } from '../../shared/components/RichText';
 import { GuideLanguageSwitch } from '../../shared/components/GuideLanguageSwitch';
+import { ApartmentCombobox } from '../../shared/components/ApartmentCombobox';
 import { copyImageAsPng } from '../../shared/lib/clipboardImage';
 import { photoAssetUrl } from '../../infrastructure/staticMedia/photoAssets';
 import { saveApartment } from '../../infrastructure/firebase/apartmentRepository';
@@ -74,18 +75,21 @@ export function ParkingPage() {
               <h2>{text('Hướng dẫn đậu xe', 'Parking Guide')}</h2>
               <GuideLanguageSwitch value={locale} onChange={setLocale} />
             </div>
-            <input className="input" value={query} onChange={event => setQuery(event.target.value)} placeholder={text('Tìm căn hộ', 'Search apartment')} />
-            <select className="input" value={activeId} onChange={event => setActiveId(event.target.value)}>
-              <option value="">{text('— Chọn căn hộ —', '— Select an apartment —')}</option>
-              {visible.map(apartment => <option key={apartment.id} value={apartment.id}>{apartment.apartment}</option>)}
-            </select>
-          </div>
-          <div className="sidebar-list">
-            {visible.map(apartment => (
-              <button key={apartment.id} className={`sidebar-item ${activeId === apartment.id ? 'sidebar-item--active' : ''}`} onClick={() => setActiveId(apartment.id)}>
-                <span><strong>{apartment.apartment}</strong><small>{effectiveParking(apartment)?.spot || effectiveParking(apartment)?.locationEn || ''}</small></span>
-              </button>
-            ))}
+            <ApartmentCombobox
+              apartments={records}
+              value={activeId}
+              onChange={setActiveId}
+              placeholder={text('Gõ tên căn hộ hoặc địa chỉ…', 'Type apartment name or address…')}
+              emptyText={text('Không tìm thấy căn phù hợp.', 'No matching apartment.')}
+              getDescription={apartment => {
+                const guide = effectiveParking(apartment);
+                return guide?.spot || (locale === 'vi' ? guide?.locationVi : guide?.locationEn) || apartment.propertyAddress;
+              }}
+              getSearchText={apartment => {
+                const guide = effectiveParking(apartment);
+                return `${apartment.apartment} ${apartment.propertyAddress} ${guide?.spot || ''} ${guide?.locationVi || ''} ${guide?.locationEn || ''}`;
+              }}
+            />
           </div>
         </Card>
 

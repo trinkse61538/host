@@ -3,6 +3,7 @@ import { useApartments } from '../../app/providers/ApartmentProvider';
 import { useLocale } from '../../app/providers/LocaleProvider';
 import { Card } from '../../shared/components/Card';
 import { CopyButton } from '../../shared/components/CopyButton';
+import { ApartmentCombobox } from '../../shared/components/ApartmentCombobox';
 
 export function WifiPage() {
   const { apartments } = useApartments();
@@ -22,14 +23,15 @@ export function WifiPage() {
       <div className="stack">
         <span className="eyebrow">Guest connectivity</span>
         <h2>{text('Wi-Fi căn hộ', 'Apartment Wi-Fi')}</h2>
-        <input className="input" value={query} onChange={event => setQuery(event.target.value)} placeholder={text('Tìm căn hộ hoặc Wi-Fi', 'Search apartment or Wi-Fi')} />
-        <select className="input" value={activeId} onChange={event => setActiveId(event.target.value)}>
-          <option value="">{text('— Chọn căn hộ —', '— Select an apartment —')}</option>
-          {visible.map(record => <option key={record.id} value={record.id}>{record.apartment}</option>)}
-        </select>
-      </div>
-      <div className="sidebar-list">
-        {visible.map(record => <button key={record.id} className={`sidebar-item ${activeId === record.id ? 'sidebar-item--active' : ''}`} onClick={() => setActiveId(record.id)}><span><strong>{record.apartment}</strong><small>{record.wifiName || text('Chưa có tên Wi-Fi', 'No Wi-Fi name')}</small></span></button>)}
+        <ApartmentCombobox
+          apartments={records}
+          value={activeId}
+          onChange={setActiveId}
+          placeholder={text('Gõ tên căn hộ hoặc Wi-Fi…', 'Type apartment or Wi-Fi name…')}
+          emptyText={text('Không tìm thấy căn phù hợp.', 'No matching apartment.')}
+          getDescription={record => record.wifiName || record.propertyAddress || text('Chưa có tên Wi-Fi', 'No Wi-Fi name')}
+          getSearchText={record => `${record.apartment} ${record.wifiName} ${record.propertyAddress}`}
+        />
       </div>
     </Card>
 

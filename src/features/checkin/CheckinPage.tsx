@@ -10,6 +10,7 @@ import { copyImageAsPng } from '../../shared/lib/clipboardImage';
 import { photoAssetUrl } from '../../infrastructure/staticMedia/photoAssets';
 import { RichText } from '../../shared/components/RichText';
 import { GuideLanguageSwitch } from '../../shared/components/GuideLanguageSwitch';
+import { ApartmentCombobox } from '../../shared/components/ApartmentCombobox';
 import { findAgentFallback, policyStatus, statusLabel } from './agentPolicy';
 
 export function CheckinPage() {
@@ -48,32 +49,16 @@ export function CheckinPage() {
             <h2>{text('Hướng dẫn check-in', 'Check-in guides')}</h2>
             <GuideLanguageSwitch value={locale} onChange={setLocale} />
           </div>
-          <input
-            className="input"
-            value={query}
-            onChange={event => setQuery(event.target.value)}
-            placeholder={text('Tìm căn hộ', 'Find an apartment')}
+          <ApartmentCombobox
+            apartments={records}
+            value={activeId}
+            onChange={setActiveId}
+            placeholder={text('Gõ tên căn hộ, địa chỉ hoặc lockbox…', 'Type apartment, address or lockbox…')}
+            emptyText={text('Không tìm thấy căn phù hợp.', 'No matching apartment.')}
+            getDescription={record => record.lockboxType || record.propertyAddress}
+            getBadge={record => policyStatus(record).blocked ? 'NO AIRBNB' : ''}
+            getSearchText={record => `${record.apartment} ${record.keyAddress} ${record.propertyAddress} ${record.lockboxType}`}
           />
-          <select className="input" value={activeId} onChange={event => setActiveId(event.target.value)}>
-            <option value="">{text('— Chọn căn hộ —', '— Select an apartment —')}</option>
-            {visible.map(record => <option key={record.id} value={record.id}>{record.apartment}</option>)}
-          </select>
-        </div>
-
-        <div className="sidebar-list">
-          {visible.map(record => (
-            <button
-              key={record.id}
-              className={`sidebar-item ${activeId === record.id ? 'sidebar-item--active' : ''}`}
-              onClick={() => setActiveId(record.id)}
-            >
-              <span>
-                <strong>{record.apartment}</strong>
-                <small>{record.lockboxType || record.propertyAddress}</small>
-              </span>
-              {policyStatus(record).blocked && <StatusBadge tone="danger">NO AIRBNB</StatusBadge>}
-            </button>
-          ))}
         </div>
       </Card>
 
