@@ -14,8 +14,6 @@ export function SelectionSearch({
   resultCount: number;
   totalCount: number;
 }) {
-  const filtered = value.trim().length > 0;
-
   return (
     <div className="selection-search">
       <div className="selection-search__control">
@@ -30,7 +28,7 @@ export function SelectionSearch({
           <button
             type="button"
             onClick={() => onChange('')}
-            aria-label="Clear search"
+            aria-label="Clear apartment search"
           >
             ×
           </button>
@@ -38,7 +36,9 @@ export function SelectionSearch({
       </div>
 
       <span className="selection-search__count">
-        {filtered ? `${resultCount} of ${totalCount}` : `${totalCount}`} apartments
+        {value.trim()
+          ? `${resultCount} of ${totalCount} apartments`
+          : `${totalCount} apartments`}
       </span>
     </div>
   );
