@@ -95,6 +95,28 @@ export function AppShell({ render }: { render: (tab: AppTab) => ReactNode }) {
     };
   }, [availableTabs.length, updateNavEdges]);
 
+  const syncResponsiveTableLabels = () => {
+    document.querySelectorAll<HTMLTableElement>('.table-card table').forEach(table => {
+      const headers = Array.from(table.querySelectorAll('thead th')).map((header, index) => {
+        const label = header.textContent?.trim();
+        return label && label.length ? label : `Column ${index + 1}`;
+      });
+
+      table.querySelectorAll('tbody tr').forEach(row => {
+        Array.from(row.children).forEach((cell, index) => {
+          if (!(cell instanceof HTMLTableCellElement)) return;
+          const label = headers[index] || headers[headers.length - 1] || `Column ${index + 1}`;
+          cell.dataset.label = label;
+        });
+      });
+    });
+  };
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(syncResponsiveTableLabels);
+    return () => window.cancelAnimationFrame(frame);
+  }, [tab]);
+
   const setActive = (next: AppTab) => {
     setTab(next);
     const url = new URL(location.href);
