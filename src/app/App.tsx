@@ -15,6 +15,7 @@ const WifiPage = lazy(() => import('../features/wifi/WifiPage').then(module => (
 const CheckinPage = lazy(() => import('../features/checkin/CheckinPage').then(module => ({ default: module.CheckinPage })));
 const ParkingPage = lazy(() => import('../features/parking/ParkingPage').then(module => ({ default: module.ParkingPage })));
 const ManagementPage = lazy(() => import('../features/management/ManagementPage').then(module => ({ default: module.ManagementPage })));
+const AvailabilityPage = lazy(() => import('../features/availability/AvailabilityPage').then(module => ({ default: module.AvailabilityPage })));
 
 function ActivePage({ tab }: { tab: AppTab }) {
   if (tab === 'notifications') return <NotificationsPage />;
@@ -23,6 +24,7 @@ function ActivePage({ tab }: { tab: AppTab }) {
   if (tab === 'wifi') return <WifiPage />;
   if (tab === 'checkin') return <CheckinPage />;
   if (tab === 'parking') return <ParkingPage />;
+  if (tab === 'availability') return <AvailabilityPage />;
   if (tab === 'manage') return <ManagementPage />;
   return <InventoryPage />;
 }

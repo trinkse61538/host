@@ -1,0 +1,924 @@
+--- a/src/app/App.tsx
++++ b/src/app/App.tsx
+@@ -15,6 +15,7 @@
+ const CheckinPage = lazy(() => import('../features/checkin/CheckinPage').then(module => ({ default: module.CheckinPage })));
+ const ParkingPage = lazy(() => import('../features/parking/ParkingPage').then(module => ({ default: module.ParkingPage })));
+ const ManagementPage = lazy(() => import('../features/management/ManagementPage').then(module => ({ default: module.ManagementPage })));
++const AvailabilityPage = lazy(() => import('../features/availability/AvailabilityPage').then(module => ({ default: module.AvailabilityPage })));
+ 
+ function ActivePage({ tab }: { tab: AppTab }) {
+   if (tab === 'notifications') return <NotificationsPage />;
+@@ -23,6 +24,7 @@
+   if (tab === 'wifi') return <WifiPage />;
+   if (tab === 'checkin') return <CheckinPage />;
+   if (tab === 'parking') return <ParkingPage />;
++  if (tab === 'availability') return <AvailabilityPage />;
+   if (tab === 'manage') return <ManagementPage />;
+   return <InventoryPage />;
+ }
+--- a/src/app/AppShell.tsx
++++ b/src/app/AppShell.tsx
+@@ -6,7 +6,7 @@
+ import { useApartments } from './providers/ApartmentProvider';
+ import { AppIcon, type AppIconName } from '../shared/components/AppIcon';
+ 
+-export type AppTab = 'inventory' | 'notifications' | 'cleaner' | 'invoice' | 'wifi' | 'checkin' | 'parking' | 'manage';
++export type AppTab = 'inventory' | 'notifications' | 'cleaner' | 'invoice' | 'wifi' | 'checkin' | 'parking' | 'availability' | 'manage';
+ 
+ const tabs: Array<{ id: AppTab; label: string; icon: AppIconName }> = [
+   { id: 'inventory', label: 'Inventory', icon: 'inventory' },
+@@ -16,6 +16,7 @@
+   { id: 'wifi', label: 'Wi-Fi', icon: 'wifi' },
+   { id: 'checkin', label: 'Check-in', icon: 'key' },
+   { id: 'parking', label: 'Parking', icon: 'parking' },
++  { id: 'availability', label: 'Availability', icon: 'calendar' },
+   { id: 'manage', label: 'Manage', icon: 'manage' },
+ ];
+ 
+--- a/src/shared/components/AppIcon.tsx
++++ b/src/shared/components/AppIcon.tsx
+@@ -6,6 +6,7 @@
+   | 'wifi'
+   | 'key'
+   | 'parking'
++  | 'calendar'
+   | 'manage'
+   | 'copy'
+   | 'share'
+@@ -51,6 +52,7 @@
+   if (name === 'wifi') return <svg {...common}><path d="M5 9.5a11 11 0 0 1 14 0M8 13a6.5 6.5 0 0 1 8 0M10.7 16.4a2.3 2.3 0 0 1 2.6 0" /><circle cx="12" cy="19" r=".8" fill="currentColor" stroke="none" /></svg>;
+   if (name === 'key') return <svg {...common}><circle cx="8" cy="15" r="4" /><path d="m11 12 8-8M15 8l2 2M17 6l2 2" /></svg>;
+   if (name === 'parking') return <svg {...common}><path d="M5 17h14M6 17l1-7h10l1 7" /><path d="m8 10 1.5-3h5L16 10" /><circle cx="8" cy="17" r="1.5" /><circle cx="16" cy="17" r="1.5" /></svg>;
++  if (name === 'calendar') return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 10h18" /><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" /></svg>;
+   if (name === 'manage') return <svg {...common}><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg>;
+   if (name === 'copy') return <svg {...common}><rect x="8" y="8" width="11" height="11" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>;
+   if (name === 'share') return <svg {...common}><circle cx="18" cy="5" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="m8.2 10.8 7.6-4.6M8.2 13.2l7.6 4.6" /></svg>;
+--- /dev/null
++++ b/src/features/availability/AvailabilityPage.tsx
+@@ -0,0 +1,367 @@
++import { FormEvent, useEffect, useMemo, useState } from 'react';
++import { useLocale } from '../../app/providers/LocaleProvider';
++import { AppIcon } from '../../shared/components/AppIcon';
++import './availability.css';
++
++const API_BASE = 'https://airbnb-availability-api.khaitri15.workers.dev';
++
++interface CalendarEvent {
++  from: string;
++  to: string;
++}
++
++interface CalendarListing {
++  id: string;
++  name: string;
++  events: CalendarEvent[];
++  error?: string;
++}
++
++interface CalendarResponse {
++  query: { from: string; to: string; days: number };
++  summary: { total: number; errors: number };
++  results: CalendarListing[];
++  fetchedAt: string;
++}
++
++interface AvailabilityItem {
++  id: string;
++  name: string;
++  available: boolean | null;
++  conflicts?: CalendarEvent[];
++  error?: string;
++}
++
++interface AvailabilityResponse {
++  query: { checkin: string; checkout: string };
++  summary: { total: number; available: number; unavailable: number; errors: number };
++  results: AvailabilityItem[];
++  fetchedAt: string;
++}
++
++function dateKey(date: Date) {
++  const y = date.getFullYear();
++  const m = String(date.getMonth() + 1).padStart(2, '0');
++  const d = String(date.getDate()).padStart(2, '0');
++  return `${y}-${m}-${d}`;
++}
++
++function parseUtc(value: string) {
++  const [y, m, d] = value.split('-').map(Number);
++  return new Date(Date.UTC(y, m - 1, d));
++}
++
++function addDays(value: string, amount: number) {
++  const date = parseUtc(value);
++  date.setUTCDate(date.getUTCDate() + amount);
++  return date.toISOString().slice(0, 10);
++}
++
++function buildDates(start: string, count: number) {
++  return Array.from({ length: count }, (_, i) => addDays(start, i));
++}
++
++function covers(event: CalendarEvent, day: string) {
++  return event.from <= day && day < event.to;
++}
++
++function defaultStay() {
++  const checkin = new Date();
++  const checkout = new Date(checkin);
++  checkout.setDate(checkout.getDate() + 1);
++  return { checkin: dateKey(checkin), checkout: dateKey(checkout) };
++}
++
++export function AvailabilityPage() {
++  const { locale, text } = useLocale();
++  const today = useMemo(() => dateKey(new Date()), []);
++  const stay = useMemo(defaultStay, []);
++  const [mode, setMode] = useState<'calendar' | 'search'>('calendar');
++
++  const [startDate, setStartDate] = useState(today);
++  const [rangeDays, setRangeDays] = useState(14);
++  const [calendarData, setCalendarData] = useState<CalendarResponse | null>(null);
++  const [calendarLoading, setCalendarLoading] = useState(true);
++  const [calendarError, setCalendarError] = useState('');
++  const [refreshKey, setRefreshKey] = useState(0);
++
++  const [checkin, setCheckin] = useState(stay.checkin);
++  const [checkout, setCheckout] = useState(stay.checkout);
++  const [searchData, setSearchData] = useState<AvailabilityResponse | null>(null);
++  const [searchLoading, setSearchLoading] = useState(false);
++  const [searchError, setSearchError] = useState('');
++
++  const dates = useMemo(() => buildDates(startDate, rangeDays), [startDate, rangeDays]);
++  const endExclusive = useMemo(() => addDays(startDate, rangeDays), [startDate, rangeDays]);
++
++  const formatDate = (value: string, short = false) =>
++    parseUtc(value).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-AU', short
++      ? { day: '2-digit', month: '2-digit', timeZone: 'UTC' }
++      : { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
++
++  useEffect(() => {
++    let cancelled = false;
++
++    const load = async () => {
++      setCalendarLoading(true);
++      setCalendarError('');
++      try {
++        const params = new URLSearchParams({ from: startDate, to: endExclusive });
++        const response = await fetch(`${API_BASE}/calendar?${params}`, {
++          cache: 'no-store',
++          headers: { Accept: 'application/json' },
++        });
++        const payload = await response.json() as CalendarResponse | { error?: string };
++        if (!response.ok) {
++          throw new Error('error' in payload && payload.error
++            ? payload.error
++            : text('Không thể tải lịch tổng quan.', 'Unable to load calendar overview.'));
++        }
++        if (!cancelled) setCalendarData(payload as CalendarResponse);
++      } catch (reason) {
++        if (!cancelled) {
++          setCalendarError(reason instanceof Error
++            ? reason.message
++            : text('Không thể kết nối API lịch.', 'Could not connect to the calendar API.'));
++        }
++      } finally {
++        if (!cancelled) setCalendarLoading(false);
++      }
++    };
++
++    void load();
++    return () => { cancelled = true; };
++  }, [endExclusive, refreshKey, startDate, text]);
++
++  const runSearch = async (event: FormEvent) => {
++    event.preventDefault();
++    setSearchError('');
++    setSearchData(null);
++
++    if (!checkin || !checkout || checkout <= checkin) {
++      setSearchError(text('Ngày trả phòng phải sau ngày nhận phòng.', 'Check-out must be after check-in.'));
++      return;
++    }
++
++    setSearchLoading(true);
++    try {
++      const params = new URLSearchParams({ checkin, checkout });
++      const response = await fetch(`${API_BASE}/availability?${params}`, {
++        cache: 'no-store',
++        headers: { Accept: 'application/json' },
++      });
++      const payload = await response.json() as AvailabilityResponse | { error?: string };
++      if (!response.ok) {
++        throw new Error('error' in payload && payload.error
++          ? payload.error
++          : text('Không thể kiểm tra căn trống.', 'Unable to check availability.'));
++      }
++      setSearchData(payload as AvailabilityResponse);
++    } catch (reason) {
++      setSearchError(reason instanceof Error
++        ? reason.message
++        : text('Không thể kết nối API.', 'Could not connect to the API.'));
++    } finally {
++      setSearchLoading(false);
++    }
++  };
++
++  const available = searchData?.results.filter(item => item.available === true) ?? [];
++  const unavailable = searchData?.results.filter(item => item.available === false) ?? [];
++  const unknown = searchData?.results.filter(item => item.available === null) ?? [];
++
++  return (
++    <div className="availability-page stack-lg">
++      <div className="availability-hero card">
++        <div>
++          <span className="eyebrow">{text('Lịch căn hộ', 'Property calendar')}</span>
++          <h1>{text('Availability', 'Availability')}</h1>
++          <p>{text(
++            'Xem lịch tổng tất cả căn hoặc tìm căn còn trống theo ngày.',
++            'Review all listing calendars or search available properties by date.',
++          )}</p>
++        </div>
++
++        <div className="availability-mode-switch" role="tablist">
++          <button
++            type="button"
++            className={mode === 'calendar' ? 'is-active' : ''}
++            onClick={() => setMode('calendar')}
++          >
++            <AppIcon name="calendar" size={16} />
++            {text('Lịch tổng', 'Calendar')}
++          </button>
++          <button
++            type="button"
++            className={mode === 'search' ? 'is-active' : ''}
++            onClick={() => setMode('search')}
++          >
++            <AppIcon name="search" size={16} />
++            {text('Tìm căn trống', 'Search dates')}
++          </button>
++        </div>
++      </div>
++
++      {mode === 'calendar' ? (
++        <>
++          <div className="card availability-toolbar">
++            <div>
++              <span className="eyebrow">{text('Khoảng hiển thị', 'Visible range')}</span>
++              <strong>{formatDate(startDate)} → {formatDate(addDays(startDate, rangeDays - 1))}</strong>
++            </div>
++
++            <div className="availability-controls">
++              <button className="button button--ghost" type="button" onClick={() => setStartDate(today)}>
++                {text('Hôm nay', 'Today')}
++              </button>
++              <button className="button button--ghost availability-square" type="button" onClick={() => setStartDate(addDays(startDate, -rangeDays))}>‹</button>
++              <input type="date" value={startDate} onChange={event => setStartDate(event.target.value || today)} />
++              <button className="button button--ghost availability-square" type="button" onClick={() => setStartDate(addDays(startDate, rangeDays))}>›</button>
++              <div className="availability-range">
++                {[7, 14, 30].map(days => (
++                  <button key={days} type="button" className={rangeDays === days ? 'is-active' : ''} onClick={() => setRangeDays(days)}>
++                    {days}D
++                  </button>
++                ))}
++              </div>
++              <button className="button availability-square" type="button" onClick={() => setRefreshKey(value => value + 1)} disabled={calendarLoading}>
++                <AppIcon name="loader" size={16} className={calendarLoading ? 'spin' : ''} />
++              </button>
++            </div>
++
++            <div className="availability-legend">
++              <span><i className="free" />{text('Trống', 'Available')}</span>
++              <span><i className="busy" />{text('Đã có lịch / chặn', 'Unavailable / blocked')}</span>
++              <span><i className="error" />{text('Lỗi lịch', 'Calendar error')}</span>
++              {calendarData && <span className="availability-summary">{calendarData.summary.total} {text('căn', 'listings')} · {calendarData.summary.errors} {text('lỗi', 'errors')}</span>}
++            </div>
++
++            {calendarError && <div className="availability-alert">{calendarError}</div>}
++          </div>
++
++          <div className="availability-calendar card">
++            {calendarLoading && !calendarData ? (
++              <div className="availability-empty">
++                <AppIcon name="loader" size={24} className="spin" />
++                {text('Đang tải lịch...', 'Loading calendars...')}
++              </div>
++            ) : calendarData ? (
++              <div className="availability-table-wrap">
++                <table>
++                  <thead>
++                    <tr>
++                      <th className="listing-col">{text('Căn hộ', 'Listing')}</th>
++                      {dates.map(date => {
++                        const parsed = parseUtc(date);
++                        const weekday = parsed.toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-AU', { weekday: 'short', timeZone: 'UTC' });
++                        return (
++                          <th key={date} className={date === today ? 'is-today' : ''}>
++                            <small>{weekday}</small>
++                            <strong>{formatDate(date, true)}</strong>
++                          </th>
++                        );
++                      })}
++                    </tr>
++                  </thead>
++                  <tbody>
++                    {calendarData.results.map(listing => (
++                      <tr key={listing.id}>
++                        <th className="listing-col">
++                          <strong title={listing.name}>{listing.name}</strong>
++                          {listing.error && <small title={listing.error}>{listing.error}</small>}
++                        </th>
++                        {dates.map(date => {
++                          const occupied = listing.events.some(event => covers(event, date));
++                          return (
++                            <td key={date} className={date === today ? 'is-today' : ''}>
++                              <span className={listing.error ? 'calendar-cell error' : occupied ? 'calendar-cell busy' : 'calendar-cell free'}>
++                                {listing.error ? '!' : occupied ? 'BUSY' : 'FREE'}
++                              </span>
++                            </td>
++                          );
++                        })}
++                      </tr>
++                    ))}
++                  </tbody>
++                </table>
++              </div>
++            ) : (
++              <div className="availability-empty">{text('Chưa có dữ liệu lịch.', 'No calendar data yet.')}</div>
++            )}
++          </div>
++
++          {calendarData && (
++            <div className="availability-fetched">
++              {text('Cập nhật lúc', 'Fetched')}: {new Date(calendarData.fetchedAt).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-AU')}
++            </div>
++          )}
++        </>
++      ) : (
++        <>
++          <form className="card availability-search-form" onSubmit={runSearch}>
++            <div>
++              <span className="eyebrow">{text('Tìm theo ngày', 'Search by dates')}</span>
++              <h2>{text('Kiểm tra căn trống', 'Check availability')}</h2>
++            </div>
++            <label>
++              <span>{text('Nhận phòng', 'Check-in')}</span>
++              <input type="date" value={checkin} onChange={event => setCheckin(event.target.value)} />
++            </label>
++            <label>
++              <span>{text('Trả phòng', 'Check-out')}</span>
++              <input type="date" min={checkin || undefined} value={checkout} onChange={event => setCheckout(event.target.value)} />
++            </label>
++            <button className="button" type="submit" disabled={searchLoading}>
++              <AppIcon name={searchLoading ? 'loader' : 'search'} size={16} className={searchLoading ? 'spin' : ''} />
++              {searchLoading ? text('Đang kiểm tra…', 'Checking…') : text('Kiểm tra', 'Check')}
++            </button>
++            {searchError && <div className="availability-alert availability-search-error">{searchError}</div>}
++          </form>
++
++          {searchData && (
++            <>
++              <div className="availability-stats">
++                <div className="card"><span>{text('Tổng căn', 'Total')}</span><strong>{searchData.summary.total}</strong></div>
++                <div className="card good"><span>{text('Còn trống', 'Available')}</span><strong>{searchData.summary.available}</strong></div>
++                <div className="card bad"><span>{text('Đã bận', 'Unavailable')}</span><strong>{searchData.summary.unavailable}</strong></div>
++                <div className="card warn"><span>{text('Lỗi', 'Errors')}</span><strong>{searchData.summary.errors}</strong></div>
++              </div>
++
++              <div className="availability-result-grid">
++                <section className="card">
++                  <h3>{text('Căn đang trống', 'Available listings')} <span>{available.length}</span></h3>
++                  <div className="availability-list">
++                    {available.length ? available.map(item => <div key={item.id}>✓ <strong>{item.name}</strong></div>) : <p>{text('Không có căn phù hợp.', 'No available listings.')}</p>}
++                  </div>
++                </section>
++
++                <section className="card">
++                  <h3>{text('Căn đã có lịch', 'Unavailable listings')} <span>{unavailable.length}</span></h3>
++                  <div className="availability-list">
++                    {unavailable.map(item => (
++                      <div key={item.id}>
++                        ✕ <strong>{item.name}</strong>
++                        {item.conflicts?.length ? <small>{item.conflicts.map(conflict => `${formatDate(conflict.from)} → ${formatDate(conflict.to)}`).join(' · ')}</small> : null}
++                      </div>
++                    ))}
++                  </div>
++                </section>
++              </div>
++
++              {unknown.length > 0 && (
++                <section className="card availability-unknown">
++                  <h3>{text('Không thể xác minh', 'Unable to verify')}</h3>
++                  {unknown.map(item => <p key={item.id}><strong>{item.name}</strong>{item.error ? ` — ${item.error}` : ''}</p>)}
++                </section>
++              )}
++
++              <div className="availability-fetched">
++                {text('Cập nhật lúc', 'Fetched')}: {new Date(searchData.fetchedAt).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-AU')}
++              </div>
++            </>
++          )}
++        </>
++      )}
++    </div>
++  );
++}
+--- /dev/null
++++ b/src/features/availability/availability.css
+@@ -0,0 +1,496 @@
++.availability-page {
++  --availability-free: #10b981;
++  --availability-busy: #f43f5e;
++  --availability-warn: #f59e0b;
++}
++
++.availability-hero,
++.availability-toolbar {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 18px;
++  flex-wrap: wrap;
++}
++
++.availability-hero h1 {
++  margin: 3px 0 4px;
++  font-size: clamp(24px, 3vw, 34px);
++}
++
++.availability-hero p {
++  margin: 0;
++  color: var(--muted);
++  font-size: 12px;
++}
++
++.availability-mode-switch,
++.availability-range {
++  display: inline-flex;
++  gap: 4px;
++  padding: 4px;
++  border: 1px solid var(--border);
++  border-radius: 14px;
++  background: var(--surface-soft);
++}
++
++.availability-mode-switch button,
++.availability-range button {
++  border: 0;
++  border-radius: 10px;
++  background: transparent;
++  color: var(--muted);
++  font: inherit;
++  font-size: 10px;
++  font-weight: 850;
++  cursor: pointer;
++}
++
++.availability-mode-switch button {
++  display: inline-flex;
++  align-items: center;
++  gap: 7px;
++  min-height: 40px;
++  padding: 0 14px;
++}
++
++.availability-range button {
++  min-width: 42px;
++  height: 32px;
++}
++
++.availability-mode-switch button.is-active,
++.availability-range button.is-active {
++  background: var(--brand);
++  color: white;
++  box-shadow: 0 6px 18px rgb(var(--feature-rgb, 49 94 251) / .2);
++}
++
++.availability-toolbar > div:first-child {
++  display: grid;
++  gap: 5px;
++}
++
++.availability-toolbar > div:first-child strong {
++  font-size: 13px;
++}
++
++.availability-controls {
++  display: flex;
++  align-items: center;
++  gap: 7px;
++  flex-wrap: wrap;
++}
++
++.availability-controls input,
++.availability-search-form input {
++  min-height: 40px;
++  border: 1px solid var(--border);
++  border-radius: 11px;
++  background: var(--surface);
++  color: var(--text);
++  padding: 0 11px;
++  font: inherit;
++  font-size: 12px;
++  font-weight: 750;
++}
++
++.availability-square {
++  width: 40px;
++  min-width: 40px;
++  padding: 0 !important;
++  justify-content: center;
++}
++
++.availability-legend {
++  flex-basis: 100%;
++  display: flex;
++  align-items: center;
++  gap: 16px;
++  flex-wrap: wrap;
++  padding-top: 12px;
++  border-top: 1px solid var(--border);
++  color: var(--muted);
++  font-size: 10px;
++  font-weight: 750;
++}
++
++.availability-legend span {
++  display: inline-flex;
++  align-items: center;
++  gap: 6px;
++}
++
++.availability-legend i {
++  width: 11px;
++  height: 11px;
++  border-radius: 4px;
++}
++
++.availability-legend .free { background: #d1fae5; border: 1px solid #6ee7b7; }
++.availability-legend .busy { background: var(--availability-busy); }
++.availability-legend .error { background: #fef3c7; border: 1px solid #fbbf24; }
++.availability-summary { margin-left: auto; }
++
++.availability-alert {
++  flex-basis: 100%;
++  padding: 11px 13px;
++  border: 1px solid color-mix(in srgb, var(--availability-busy) 35%, var(--border));
++  border-radius: 12px;
++  background: color-mix(in srgb, var(--availability-busy) 8%, var(--surface));
++  color: var(--text);
++  font-size: 11px;
++  font-weight: 700;
++}
++
++.availability-calendar {
++  padding: 0;
++  overflow: hidden;
++}
++
++.availability-table-wrap {
++  width: 100%;
++  overflow-x: auto;
++}
++
++.availability-calendar table {
++  min-width: max-content;
++  width: 100%;
++  border-collapse: separate;
++  border-spacing: 0;
++}
++
++.availability-calendar th,
++.availability-calendar td {
++  border-right: 1px solid var(--border);
++  border-bottom: 1px solid var(--border);
++}
++
++.availability-calendar thead th {
++  position: sticky;
++  top: 0;
++  z-index: 3;
++  min-width: 60px;
++  padding: 9px 5px;
++  background: var(--surface-soft);
++  text-align: center;
++}
++
++.availability-calendar thead th small,
++.availability-calendar thead th strong {
++  display: block;
++}
++
++.availability-calendar thead th small {
++  color: var(--muted);
++  font-size: 8px;
++  text-transform: uppercase;
++}
++
++.availability-calendar thead th strong {
++  margin-top: 2px;
++  font-size: 9px;
++}
++
++.availability-calendar .listing-col {
++  position: sticky;
++  left: 0;
++  z-index: 2;
++  min-width: 220px;
++  max-width: 220px;
++  padding: 10px 12px;
++  background: var(--surface);
++  text-align: left;
++}
++
++.availability-calendar thead .listing-col {
++  z-index: 4;
++  background: var(--surface-soft);
++}
++
++.availability-calendar tbody .listing-col strong,
++.availability-calendar tbody .listing-col small {
++  display: block;
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++}
++
++.availability-calendar tbody .listing-col strong {
++  font-size: 10px;
++}
++
++.availability-calendar tbody .listing-col small {
++  margin-top: 4px;
++  color: var(--availability-warn);
++  font-size: 8px;
++}
++
++.availability-calendar td {
++  min-width: 60px;
++  padding: 5px;
++  background: var(--surface);
++  text-align: center;
++}
++
++.availability-calendar .is-today {
++  background: color-mix(in srgb, var(--brand) 7%, var(--surface));
++}
++
++.calendar-cell {
++  width: 47px;
++  height: 34px;
++  display: inline-grid;
++  place-items: center;
++  border-radius: 9px;
++  font-size: 8px;
++  font-weight: 900;
++  letter-spacing: .03em;
++}
++
++.calendar-cell.free {
++  border: 1px solid #a7f3d0;
++  background: #ecfdf5;
++  color: #047857;
++}
++
++.calendar-cell.busy {
++  border: 1px solid var(--availability-busy);
++  background: var(--availability-busy);
++  color: white;
++}
++
++.calendar-cell.error {
++  border: 1px solid #fbbf24;
++  background: #fffbeb;
++  color: #b45309;
++}
++
++:root[data-theme="dark"] .calendar-cell.free {
++  border-color: #065f46;
++  background: #052e2b;
++  color: #6ee7b7;
++}
++
++:root[data-theme="dark"] .calendar-cell.error {
++  border-color: #92400e;
++  background: #451a03;
++  color: #fbbf24;
++}
++
++.availability-empty {
++  min-height: 240px;
++  display: grid;
++  place-items: center;
++  align-content: center;
++  gap: 9px;
++  color: var(--muted);
++  font-size: 11px;
++  font-weight: 800;
++}
++
++.availability-fetched {
++  color: var(--muted);
++  font-size: 9px;
++  text-align: right;
++}
++
++.availability-search-form {
++  display: grid;
++  grid-template-columns: minmax(220px, 1.4fr) minmax(150px, .8fr) minmax(150px, .8fr) auto;
++  gap: 12px;
++  align-items: end;
++}
++
++.availability-search-form h2 {
++  margin: 4px 0 0;
++}
++
++.availability-search-form label {
++  display: grid;
++  gap: 6px;
++}
++
++.availability-search-form label > span {
++  color: var(--muted);
++  font-size: 9px;
++  font-weight: 850;
++  text-transform: uppercase;
++  letter-spacing: .06em;
++}
++
++.availability-search-error {
++  grid-column: 1 / -1;
++}
++
++.availability-stats {
++  display: grid;
++  grid-template-columns: repeat(4, minmax(0, 1fr));
++  gap: 12px;
++}
++
++.availability-stats .card {
++  display: grid;
++  gap: 6px;
++  padding: 16px;
++}
++
++.availability-stats span {
++  color: var(--muted);
++  font-size: 9px;
++  font-weight: 850;
++  text-transform: uppercase;
++}
++
++.availability-stats strong {
++  font-size: 26px;
++}
++
++.availability-stats .good strong { color: var(--availability-free); }
++.availability-stats .bad strong { color: var(--availability-busy); }
++.availability-stats .warn strong { color: var(--availability-warn); }
++
++.availability-result-grid {
++  display: grid;
++  grid-template-columns: 1fr 1fr;
++  gap: 14px;
++}
++
++.availability-result-grid h3,
++.availability-unknown h3 {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  margin-top: 0;
++}
++
++.availability-result-grid h3 span {
++  min-width: 26px;
++  height: 26px;
++  display: inline-grid;
++  place-items: center;
++  border-radius: 999px;
++  background: var(--surface-soft);
++  font-size: 10px;
++}
++
++.availability-list {
++  display: grid;
++}
++
++.availability-list > div {
++  padding: 10px 0;
++  border-top: 1px solid var(--border);
++  font-size: 11px;
++}
++
++.availability-list small {
++  display: block;
++  margin: 4px 0 0 18px;
++  color: var(--muted);
++}
++
++.availability-list p,
++.availability-unknown p {
++  color: var(--muted);
++  font-size: 11px;
++}
++
++@media (max-width: 900px) {
++  .availability-hero,
++  .availability-toolbar {
++    align-items: stretch;
++    flex-direction: column;
++  }
++
++  .availability-mode-switch {
++    width: 100%;
++  }
++
++  .availability-mode-switch button {
++    flex: 1 1 0;
++    justify-content: center;
++  }
++
++  .availability-controls {
++    display: grid;
++    grid-template-columns: auto 40px minmax(140px, 1fr) 40px;
++  }
++
++  .availability-controls .availability-range {
++    grid-column: 1 / -2;
++  }
++
++  .availability-controls > .availability-square:last-child {
++    grid-column: -2 / -1;
++  }
++
++  .availability-summary {
++    width: 100%;
++    margin-left: 0;
++  }
++
++  .availability-search-form {
++    grid-template-columns: 1fr 1fr;
++  }
++
++  .availability-search-form > div:first-child,
++  .availability-search-form .availability-search-error {
++    grid-column: 1 / -1;
++  }
++
++  .availability-search-form > .button {
++    grid-column: 1 / -1;
++    width: 100%;
++  }
++
++  .availability-stats {
++    grid-template-columns: 1fr 1fr;
++  }
++
++  .availability-result-grid {
++    grid-template-columns: 1fr;
++  }
++}
++
++@media (max-width: 560px) {
++  .availability-controls {
++    grid-template-columns: 1fr 40px 40px;
++  }
++
++  .availability-controls > .button:first-child {
++    grid-column: 1 / -1;
++  }
++
++  .availability-controls input {
++    grid-column: 1 / 2;
++  }
++
++  .availability-controls .availability-range {
++    grid-column: 1 / -1;
++    width: 100%;
++  }
++
++  .availability-range button {
++    flex: 1 1 0;
++  }
++
++  .availability-controls > .availability-square:last-child {
++    grid-column: 1 / -1;
++    width: 100%;
++  }
++
++  .availability-search-form,
++  .availability-stats {
++    grid-template-columns: 1fr;
++  }
++
++  .availability-search-form > * {
++    grid-column: 1 !important;
++  }
++
++  .availability-calendar .listing-col {
++    min-width: 176px;
++    max-width: 176px;
++  }
++}

@@ -6,6 +6,7 @@ export type AppIconName =
   | 'wifi'
   | 'key'
   | 'parking'
+  | 'calendar'
   | 'manage'
   | 'copy'
   | 'share'
@@ -51,6 +52,7 @@ export function AppIcon({
   if (name === 'wifi') return <svg {...common}><path d="M5 9.5a11 11 0 0 1 14 0M8 13a6.5 6.5 0 0 1 8 0M10.7 16.4a2.3 2.3 0 0 1 2.6 0" /><circle cx="12" cy="19" r=".8" fill="currentColor" stroke="none" /></svg>;
   if (name === 'key') return <svg {...common}><circle cx="8" cy="15" r="4" /><path d="m11 12 8-8M15 8l2 2M17 6l2 2" /></svg>;
   if (name === 'parking') return <svg {...common}><path d="M5 17h14M6 17l1-7h10l1 7" /><path d="m8 10 1.5-3h5L16 10" /><circle cx="8" cy="17" r="1.5" /><circle cx="16" cy="17" r="1.5" /></svg>;
+  if (name === 'calendar') return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 10h18" /><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" /></svg>;
   if (name === 'manage') return <svg {...common}><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg>;
   if (name === 'copy') return <svg {...common}><rect x="8" y="8" width="11" height="11" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>;
   if (name === 'share') return <svg {...common}><circle cx="18" cy="5" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="m8.2 10.8 7.6-4.6M8.2 13.2l7.6 4.6" /></svg>;

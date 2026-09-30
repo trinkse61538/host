@@ -6,7 +6,7 @@ import { useLocale } from './providers/LocaleProvider';
 import { useApartments } from './providers/ApartmentProvider';
 import { AppIcon, type AppIconName } from '../shared/components/AppIcon';
 
-export type AppTab = 'inventory' | 'notifications' | 'cleaner' | 'invoice' | 'wifi' | 'checkin' | 'parking' | 'manage';
+export type AppTab = 'inventory' | 'notifications' | 'cleaner' | 'invoice' | 'wifi' | 'checkin' | 'parking' | 'availability' | 'manage';
 
 const tabs: Array<{ id: AppTab; label: string; icon: AppIconName }> = [
   { id: 'inventory', label: 'Inventory', icon: 'inventory' },
@@ -16,6 +16,7 @@ const tabs: Array<{ id: AppTab; label: string; icon: AppIconName }> = [
   { id: 'wifi', label: 'Wi-Fi', icon: 'wifi' },
   { id: 'checkin', label: 'Check-in', icon: 'key' },
   { id: 'parking', label: 'Parking', icon: 'parking' },
+  { id: 'availability', label: 'Availability', icon: 'calendar' },
   { id: 'manage', label: 'Manage', icon: 'manage' },
 ];
 
