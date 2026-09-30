@@ -13,6 +13,7 @@ interface CalendarEvent {
 interface CalendarListing {
   id: string;
   name: string;
+  alias: string;
   events: CalendarEvent[];
   error?: string;
 }
@@ -27,6 +28,7 @@ interface CalendarResponse {
 interface AvailabilityItem {
   id: string;
   name: string;
+  alias: string;
   available: boolean | null;
   conflicts?: CalendarEvent[];
   error?: string;
@@ -251,6 +253,7 @@ export function AvailabilityPage() {
                   <thead>
                     <tr>
                       <th className="listing-col">{text('Căn hộ', 'Listing')}</th>
+                      <th className="alias-col">Alias</th>
                       {dates.map(date => {
                         const parsed = parseUtc(date);
                         const weekday = parsed.toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-AU', { weekday: 'short', timeZone: 'UTC' });
@@ -270,6 +273,9 @@ export function AvailabilityPage() {
                           <strong title={listing.name}>{listing.name}</strong>
                           {listing.error && <small title={listing.error}>{listing.error}</small>}
                         </th>
+                        <td className="alias-col">
+                          <strong title={listing.alias}>{listing.alias || '—'}</strong>
+                        </td>
                         {dates.map(date => {
                           const occupied = listing.events.some(event => covers(event, date));
                           return (
@@ -331,7 +337,7 @@ export function AvailabilityPage() {
                 <section className="card">
                   <h3>{text('Căn đang trống', 'Available listings')} <span>{available.length}</span></h3>
                   <div className="availability-list">
-                    {available.length ? available.map(item => <div key={item.id}>✓ <strong>{item.name}</strong></div>) : <p>{text('Không có căn phù hợp.', 'No available listings.')}</p>}
+                    {available.length ? available.map(item => <div key={item.id}>✓ <strong>{item.name}</strong>{item.alias ? <small>{item.alias}</small> : null}</div>) : <p>{text('Không có căn phù hợp.', 'No available listings.')}</p>}
                   </div>
                 </section>
 
@@ -341,6 +347,7 @@ export function AvailabilityPage() {
                     {unavailable.map(item => (
                       <div key={item.id}>
                         ✕ <strong>{item.name}</strong>
+                        {item.alias ? <small>{item.alias}</small> : null}
                         {item.conflicts?.length ? <small>{item.conflicts.map(conflict => `${formatDate(conflict.from)} → ${formatDate(conflict.to)}`).join(' · ')}</small> : null}
                       </div>
                     ))}

@@ -494,3 +494,44 @@
     max-width: 176px;
   }
 }
+
+
+/* Availability alias column */
+.availability-calendar .alias-col {
+  position: sticky;
+  left: 220px;
+  z-index: 2;
+  min-width: 132px;
+  max-width: 132px;
+  padding: 10px 12px;
+  background: var(--surface);
+  text-align: left;
+}
+
+.availability-calendar thead .alias-col {
+  z-index: 4;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.availability-calendar tbody .alias-col strong {
+  display: block;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .availability-calendar .alias-col {
+    left: 176px;
+    min-width: 118px;
+    max-width: 118px;
+  }
+}
